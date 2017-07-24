@@ -34,7 +34,7 @@ public class Main {
 		}
 	}
 	
-	private static BufferedImage convertGrayscale(BufferedImage test){
+	private BufferedImage convertGrayscale(BufferedImage test){
 		//pure image is the one that is greyscaled 
 		int picWidth = test.getWidth();
     	int picHeight = test.getHeight();
@@ -124,6 +124,24 @@ public class Main {
 		}
 	}
 	
-	
+	private BufferedImage hightlightShape(BufferedImage blackLines, BufferedImage real){
+		BufferedImage highlight = real;
+		int picWidth = highlight.getWidth();
+		int picHeight = highlight.getHeight();
+		Color black = new Color(0, 0, 0);
+		Color trace = Color.CYAN;
+		for (int counterX = 0; counterX < (picWidth) ; counterX += 1){
+    		for (int counterY = 0; counterY < (picHeight) ; counterY += 1){
+    			int originalColor;
+        		originalColor = blackLines.getRGB(counterX, counterY);
+        		Color myColor = new Color(originalColor);
+        		if (myColor.equals(black)){
+        			highlight.setRGB(counterX, counterY, trace.getRGB());
+        		}
+    		}
+		}
+		return highlight;
+		
+	}
 		
 }
