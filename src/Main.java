@@ -83,5 +83,6 @@ public class Main {
 		}
 		return convertedImage;
 	}
+	private 
 		
 }
