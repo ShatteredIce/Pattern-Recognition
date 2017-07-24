@@ -7,11 +7,12 @@ import javax.imageio.ImageIO;
 public class Main {
 	
 	final int colorThreshold = 5;
-	final int neighborThreshold = 4;
+	final int neighborMinThreshold = 4;
+	final int neighborMaxThreshold = 15;
 	
 	public Main(){
-		BufferedImage test = loadImage("./res/test_diamond.jpg");
-		storeImage(highlightShape(findEdges(convertGrayscale(test)), test), "./res/output.png");
+		BufferedImage test = loadImage("./res/raw/star.png");
+		storeImage(highlightShape(findEdges(convertGrayscale(test)), test), "./res/processed/star_out.png");
 		//storeImage(findEdges(convertGrayscale(test)), "./res/output.png");
 	}
 
@@ -106,7 +107,7 @@ public class Main {
 						}
 					}
 				}
-				if(numSimilar > neighborThreshold){
+				if(numSimilar > neighborMinThreshold && numSimilar < neighborMaxThreshold){
 					convertedImage.setRGB(xpos, ypos, Color.RED.getRGB());
 				}
 				else{
