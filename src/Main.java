@@ -8,7 +8,7 @@ public class Main {
 		BufferedImage test = loadImage("./res/test_triangle.jpg");
 		try {
 			BufferedImage outImage = convertGrayscale(test);
-			File outFile = new File("out_triangle.jpg");
+			File outFile = new File("./res/out_triangle.jpg");
 			ImageIO.write(outImage, "jpg", outFile);
 			System.out.println("complete");
 		} catch (Exception e) {
