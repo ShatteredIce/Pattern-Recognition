@@ -10,7 +10,7 @@ public class Main {
 	final int neighborThreshold = 4;
 	
 	public Main(){
-		BufferedImage test = loadImage("./res/star.png");
+		BufferedImage test = loadImage("./res/test_diamond.jpg");
 		storeImage(highlightShape(findEdges(convertGrayscale(test)), test), "./res/output.png");
 		//storeImage(findEdges(convertGrayscale(test)), "./res/output.png");
 	}
@@ -107,7 +107,7 @@ public class Main {
 					}
 				}
 				if(numSimilar > neighborThreshold){
-					convertedImage.setRGB(xpos, ypos, Color.BLACK.getRGB());
+					convertedImage.setRGB(xpos, ypos, Color.RED.getRGB());
 				}
 				else{
 					convertedImage.setRGB(xpos, ypos, Color.WHITE.getRGB());
