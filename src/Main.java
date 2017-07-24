@@ -3,10 +3,16 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import javax.imageio.ImageIO;
+
 public class Main {
+	
+	final int colorThreshold = 5;
+	final int neighborThreshold = 4;
+	
 	public Main(){
-		BufferedImage test = loadImage("./res/grey_triangle.jpg");
-		storeImage(findEdges(test), "./res/edge_triangle.jpg");
+		BufferedImage test = loadImage("./res/star.png");
+		storeImage(highlightShape(findEdges(convertGrayscale(test)), test), "./res/output.png");
+		//storeImage(findEdges(convertGrayscale(test)), "./res/output.png");
 	}
 
 	public static void main(String[] args) {
@@ -28,7 +34,7 @@ public class Main {
 	private void storeImage(BufferedImage image, String path) {
 		File out = new File(path);
 		try {
-			ImageIO.write(image, "jpg", out);
+			ImageIO.write(image, "png", out);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -88,11 +94,11 @@ public class Main {
 		int width = img.getWidth();
 		int height = img.getHeight();
 		BufferedImage convertedImage = new BufferedImage(width, height, img.getType()); 
-		for(int xpos = 1; xpos < width - 1; xpos++){
-			for(int ypos = 1; ypos < height - 1; ypos++){
+		for(int xpos = 2; xpos < width - 2; xpos++){
+			for(int ypos = 2; ypos < height - 2; ypos++){
 				int numSimilar = 0;
-				for(int i = xpos - 1; i <= xpos + 1; i++){
-					for(int j = ypos - 1; j <= ypos + 1; j++){
+				for(int i = xpos - 2; i <= xpos + 2; i++){
+					for(int j = ypos - 2; j <= ypos + 2; j++){
 						Color pixel1 = new Color(img.getRGB(xpos, ypos));
 						Color pixel2 = new Color(img.getRGB(i, j));
 						if(checkSimilarity(pixel1, pixel2)){
@@ -100,7 +106,7 @@ public class Main {
 						}
 					}
 				}
-				if(numSimilar > 4){
+				if(numSimilar > neighborThreshold){
 					convertedImage.setRGB(xpos, ypos, Color.BLACK.getRGB());
 				}
 				else{
@@ -113,10 +119,9 @@ public class Main {
 	}
 	
 	private boolean checkSimilarity(Color pixel1, Color pixel2){
-		int threshold = 10;
 		int red1 = pixel1.getRed();
 		int red2 = pixel2.getRed();
-		if(Math.abs(red1 - red2) > threshold){
+		if(Math.abs(red1 - red2) > colorThreshold){
 			return true;
 		}
 		else{
@@ -124,7 +129,7 @@ public class Main {
 		}
 	}
 	
-	private BufferedImage hightlightShape(BufferedImage blackLines, BufferedImage real){
+	private BufferedImage highlightShape(BufferedImage blackLines, BufferedImage real){
 		BufferedImage highlight = real;
 		int picWidth = highlight.getWidth();
 		int picHeight = highlight.getHeight();
