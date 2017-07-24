@@ -4,15 +4,21 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import javax.imageio.ImageIO;
 public class Main {
-	
-	
 	public Main(){
-		BufferedImage test = loadImage("./res/test_triangle.jpg:");
+		BufferedImage test = loadImage("./res/test_triangle.jpg");
+		try {
+			BufferedImage outImage = convertGrayscale(test);
+			File outFile = new File("out_triangle.jpg");
+			ImageIO.write(outImage, "jpg", outFile);
+			System.out.println("complete");
+		} catch (Exception e) {
+			System.out.println("error");
+		}
 		
 	}
 
 	public static void main(String[] args) {
-
+		new Main();
 	}
 	
 	private BufferedImage loadImage(String path) {
@@ -28,7 +34,7 @@ public class Main {
 		}
 	}
 	
-	private BufferedImage convertGrayscale(BufferedImage test){
+	private static BufferedImage convertGrayscale(BufferedImage test){
 		//pure image is the one that is greyscaled 
 		int picWidth = test.getWidth();
     	int picHeight = test.getHeight();
