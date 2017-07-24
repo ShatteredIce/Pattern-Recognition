@@ -57,5 +57,31 @@ public class Main {
     	}
     	return pureImage;
 	}
+	
+	private BufferedImage blurImage(BufferedImage img){
+		int width = img.getWidth();
+		int height = img.getHeight();
+		BufferedImage convertedImage = new BufferedImage(width, height, img.getType()); 
+		for(int xpos = 1; xpos < width - 1; xpos++){
+			for(int ypos = 1; ypos < height - 1; ypos++){
+				double red = 0;
+				double blue = 0;
+				double green = 0;
+				for(int i = xpos - 1; i <= xpos + 1; xpos++){
+					for(int j = ypos - 1; j <= ypos + 1; ypos++){
+						Color currentColor = new Color(img.getRGB(i, j));
+						red += (1/9) * currentColor.getRed();
+						blue += (1/9) * currentColor.getBlue();
+						green += (1/9) * currentColor.getGreen();
+						
+					}
+				}
+				Color newColor = new Color((int) red, (int) green, (int) blue);
+				convertedImage.setRGB(xpos, ypos, newColor.getRGB());
+				
+			}
+		}
+		return convertedImage;
+	}
 		
 }
