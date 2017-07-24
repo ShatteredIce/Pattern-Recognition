@@ -133,14 +133,14 @@ public class Main {
 		BufferedImage highlight = real;
 		int picWidth = highlight.getWidth();
 		int picHeight = highlight.getHeight();
-		Color black = new Color(0, 0, 0);
+		Color red = Color.RED;
 		Color trace = Color.CYAN;
 		for (int counterX = 0; counterX < (picWidth) ; counterX += 1){
     		for (int counterY = 0; counterY < (picHeight) ; counterY += 1){
     			int originalColor;
         		originalColor = blackLines.getRGB(counterX, counterY);
         		Color myColor = new Color(originalColor);
-        		if (myColor.equals(black)){
+        		if (myColor.equals(red)){
         			highlight.setRGB(counterX, counterY, trace.getRGB());
         		}
     		}
