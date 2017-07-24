@@ -6,15 +6,7 @@ import javax.imageio.ImageIO;
 public class Main {
 	public Main(){
 		BufferedImage test = loadImage("./res/test_triangle.jpg");
-		try {
-			BufferedImage outImage = convertGrayscale(test);
-			File outFile = new File("./res/out_triangle.jpg");
-			ImageIO.write(outImage, "jpg", outFile);
-			System.out.println("complete");
-		} catch (Exception e) {
-			System.out.println("error");
-		}
-		
+		storeImage(convertGrayscale(test), "./res/out_triangle.jpg");
 	}
 
 	public static void main(String[] args) {
@@ -31,6 +23,14 @@ public class Main {
 		catch (Exception e) {
 			e.printStackTrace();
 			return null;
+		}
+	}
+	private void storeImage(BufferedImage image, String path) {
+		File out = new File(path);
+		try {
+			ImageIO.write(image, "jpg", out);
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 	
