@@ -5,8 +5,8 @@ import java.io.*;
 import javax.imageio.ImageIO;
 public class Main {
 	public Main(){
-		BufferedImage test = loadImage("./res/test_triangle.jpg");
-		storeImage(convertGrayscale(test), "./res/out_triangle.jpg");
+		BufferedImage test = loadImage("./res/grey_triangle.jpg");
+		storeImage(findEdges(test), "./res/edge_triangle.jpg");
 	}
 
 	public static void main(String[] args) {
@@ -67,12 +67,12 @@ public class Main {
 				double red = 0;
 				double blue = 0;
 				double green = 0;
-				for(int i = xpos - 1; i <= xpos + 1; xpos++){
-					for(int j = ypos - 1; j <= ypos + 1; ypos++){
+				for(int i = xpos - 1; i <= xpos + 1; i++){
+					for(int j = ypos - 1; j <= ypos + 1; j++){
 						Color currentColor = new Color(img.getRGB(i, j));
-						red += (1/9) * currentColor.getRed();
-						blue += (1/9) * currentColor.getBlue();
-						green += (1/9) * currentColor.getGreen();
+						red += (1d/9d) * currentColor.getRed();
+						blue += (1d/9d) * currentColor.getBlue();
+						green += (1d/9d) * currentColor.getGreen();
 						
 					}
 				}
@@ -83,5 +83,47 @@ public class Main {
 		}
 		return convertedImage;
 	}
+	
+	private BufferedImage findEdges(BufferedImage img){
+		int width = img.getWidth();
+		int height = img.getHeight();
+		BufferedImage convertedImage = new BufferedImage(width, height, img.getType()); 
+		for(int xpos = 1; xpos < width - 1; xpos++){
+			for(int ypos = 1; ypos < height - 1; ypos++){
+				int numSimilar = 0;
+				for(int i = xpos - 1; i <= xpos + 1; i++){
+					for(int j = ypos - 1; j <= ypos + 1; j++){
+						Color pixel1 = new Color(img.getRGB(xpos, ypos));
+						Color pixel2 = new Color(img.getRGB(i, j));
+						if(checkSimilarity(pixel1, pixel2)){
+							numSimilar++;
+						}
+					}
+				}
+				if(numSimilar > 4){
+					convertedImage.setRGB(xpos, ypos, Color.BLACK.getRGB());
+				}
+				else{
+					convertedImage.setRGB(xpos, ypos, Color.WHITE.getRGB());
+				}
+				
+			}
+		}
+		return convertedImage;
+	}
+	
+	private boolean checkSimilarity(Color pixel1, Color pixel2){
+		int threshold = 10;
+		int red1 = pixel1.getRed();
+		int red2 = pixel2.getRed();
+		if(Math.abs(red1 - red2) > threshold){
+			return true;
+		}
+		else{
+			return false;
+		}
+	}
+	
+	
 		
 }
