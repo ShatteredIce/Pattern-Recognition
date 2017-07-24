@@ -34,7 +34,7 @@ public class Main {
 		}
 	}
 	
-	private static BufferedImage convertGrayscale(BufferedImage test){
+	private BufferedImage convertGrayscale(BufferedImage test){
 		//pure image is the one that is greyscaled 
 		int picWidth = test.getWidth();
     	int picHeight = test.getHeight();
