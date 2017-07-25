@@ -7,13 +7,13 @@ import javax.imageio.ImageIO;
 public class Main {
 	
 	final int colorThreshold = 5;
-	final int neighborMinThreshold = 4;
-	final int neighborMaxThreshold = 15;
+	final int neighborMinThreshold = 6;
+	final int neighborMaxThreshold = 25;
 	
 	public Main(){
 		BufferedImage test = loadImage("./res/raw/star.png");
 		storeImage(highlightShape(findEdges(convertGrayscale(test)), test), "./res/processed/star_out.png");
-		//storeImage(findEdges(convertGrayscale(test)), "./res/output.png");
+		//storeImage(findEdges(convertGrayscale(test)), "./res/processed/threshold2.png");
 	}
 
 	public static void main(String[] args) {
