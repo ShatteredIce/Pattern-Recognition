@@ -12,15 +12,9 @@ public class Main {
 	final int neighborMinThreshold = 6;
 	final int neighborMaxThreshold = 25;
 	
-<<<<<<< HEAD
 	public Main(){
-		BufferedImage test = loadImage("./res/raw/triangle4.png");
-		
-=======
-	public Main(){
-		BufferedImage test = loadImage("./res/raw/square.png");
-		storeImage(highlightShape(findEdges(convertGrayscale(test)), test), "./res/processed/triangle_out.png");
->>>>>>> branch 'Natalie' of https://github.com/ShatteredIce/Pattern-Recognition
+		BufferedImage test = loadImage("./res/raw/gear1.png");
+		storeImage(highlightShape(findEdges(convertGrayscale(test)), test), "./res/processed/square_out.png");
 		System.out.print("hello!");
 		BufferedImage shape = highlightShape(findEdges(convertGrayscale(test)), test);
 		ArrayList<ArrayList> mine = findEndpoints(findEdges(convertGrayscale(test)));
@@ -31,8 +25,9 @@ public class Main {
 					shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(255,0,0)).getRGB());
 				}
 			}
+			System.out.println("X:" + temp.get(0) + " Y: " + temp.get(1));
 		}
-		storeImage(shape, "./res/processed/squarebox_out.png");
+		storeImage(shape, "./res/processed/gear1_out.png");
 		System.out.print("done!");
 		 
 		//storeImage(findEdges(convertGrayscale(test)), "./res/output.png");
