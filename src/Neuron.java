@@ -10,12 +10,15 @@ public class Neuron {
 	double[] weights = new double[numInputs];
 	double lastOutput;
 	
-	public Neuron(double[] data){
-		inputs = data;
+	public Neuron(){
 		//initializes random weights between -2.0 to 2.0
 		for(int i = 0; i < numInputs; i++){
 			weights[i] = 4 * (random.nextDouble() - 0.5);
 		}
+	}
+	
+	public void setInputs(double[] data){
+		inputs = data;
 	}
 	
 	public double calculateOutput(){
