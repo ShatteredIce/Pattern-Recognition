@@ -13,14 +13,20 @@ public class Main {
 	final int neighborMaxThreshold = 25;
 	
 	public Main(){
-		BufferedImage test = loadImage("./res/raw/triangle1.png");
-		storeImage(highlightShape(findEdges(convertGrayscale(test)), test), "./res/processed/triangle_out.png");
+		BufferedImage test = loadImage("./res/raw/triangle4.png");
+		
 		System.out.print("hello!");
+		BufferedImage shape = highlightShape(findEdges(convertGrayscale(test)), test);
 		ArrayList<ArrayList> mine = findEndpoints(findEdges(convertGrayscale(test)));
-		for (int i = 0; i < mine.size(); i +=1){
+		for (int i = 0; i < mine.size(); i ++){
 			ArrayList temp = mine.get(i);
-			System.out.println("the x value is " + temp.get(0) + " ,the y value is " + temp.get(1));
+			for (int j = 0; j < 2; j ++) {
+				for (int k = 0; k < 2; k ++) {
+					shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(255,0,0)).getRGB());
+				}
+			}
 		}
+		storeImage(shape, "./res/processed/squarebox_out.png");
 		System.out.print("done!");
 		 
 		//storeImage(findEdges(convertGrayscale(test)), "./res/output.png");
