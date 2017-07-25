@@ -150,5 +150,45 @@ public class Main {
 		return highlight;
 		
 	}
+	private Double[][] processShape(ArrayList<ArrayList<ArrayList<Integer>>> inArray) {
+		int len = inArray.size();
+		int i = 0;
+		Double[][] outArray = new Double[len][3];
+		/// Identify: ratio of max-width:max-height, number of points, std from average angle
+		for (ArrayList<ArrayList<Integer>> shape : inArray) {
+			double minX = (double)shape.get(0).get(0), minY = (double)shape.get(0).get(1), maxX = (double)shape.get(0).get(1), maxY = (double)shape.get(0).get(1);
+			Double[] angles = new Double[shape.size()];
+			double sum = 0;
+			int j = 0;
+			for (ArrayList<Integer> points : shape) {
+				double x = (double)points.get(0);
+				double y = (double)points.get(1);
+				double x1 = (double)shape.get(j+1).get(0);
+				double x2 = (double)shape.get(j-1).get(0);
+				double y1 = (double)shape.get(j+1).get(1);
+				double y2 = (double)shape.get(j-1).get(1);
+				minX = x < minX? x : minX;
+				minY = y < minY? y : minY;
+				maxX = x > maxX? x : maxX;
+				maxY = y > maxY? y : maxY;
+				angles[j] = Math.PI - (Math.atan(Math.abs(y2-y)/Math.abs(x2-x))+Math.atan(Math.abs(y1-y)/Math.abs(x1-x)));
+				sum += angles[j];
+				j ++;
+			}
+			double avg = sum / angles.length;
+			double sqDiffSum = 0;
+			for (double angle: angles) {
+				sqDiffSum += (avg - angle) * (avg - angle);
+			}
+			double r  = (maxX - minX)/(maxY - minY);
+			double sqDiffMean = sqDiffSum / angles.length; 
+			double std = Math.sqrt(sqDiffMean);
+			outArray[i][0] = r;
+			outArray[i][1] = (double)shape.size();
+			outArray[i][2] = std;
+			i ++;
+		}
+		return outArray;		
+	}
 		
 }
