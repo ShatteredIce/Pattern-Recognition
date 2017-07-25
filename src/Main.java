@@ -12,9 +12,15 @@ public class Main {
 	final int neighborMinThreshold = 6;
 	final int neighborMaxThreshold = 25;
 	
+<<<<<<< HEAD
 	public Main(){
 		BufferedImage test = loadImage("./res/raw/triangle4.png");
 		
+=======
+	public Main(){
+		BufferedImage test = loadImage("./res/raw/square.png");
+		storeImage(highlightShape(findEdges(convertGrayscale(test)), test), "./res/processed/triangle_out.png");
+>>>>>>> branch 'Natalie' of https://github.com/ShatteredIce/Pattern-Recognition
 		System.out.print("hello!");
 		BufferedImage shape = highlightShape(findEdges(convertGrayscale(test)), test);
 		ArrayList<ArrayList> mine = findEndpoints(findEdges(convertGrayscale(test)));
@@ -223,11 +229,20 @@ public class Main {
 					if (x != 0){ //if not all the way left, left down
 						ArrayList<Integer> newEndPointLD =  tryToFindEndHelp(coordinates, 11, blackLines, 1);
 						allEnds.add(newEndPointLD);
+						if (x != 1){
+							ArrayList<Integer> newEndPointLLD =  tryToFindEndHelp(coordinates, 21, blackLines, 1);
+							allEnds.add(newEndPointLLD);
+						}
 					}
 					if (x != blackLines.getWidth()){ //if not all the way right
 						//go right down
 						ArrayList<Integer> newEndPointRD =  tryToFindEndHelp(coordinates, 13, blackLines, 1);
 						allEnds.add(newEndPointRD);
+						if (x != blackLines.getWidth() - 1){
+							//can go right right down
+							ArrayList<Integer> newEndPointRRD =  tryToFindEndHelp(coordinates, 23, blackLines, 1);
+							allEnds.add(newEndPointRRD);
+						}
 					}
 					//go down
 					ArrayList<Integer> newEndPointD = tryToFindEndHelp(coordinates, 12, blackLines, 1);
@@ -237,6 +252,17 @@ public class Main {
 					//go right
 					ArrayList<Integer> newEndPointR = tryToFindEndHelp(coordinates, 3, blackLines, 1);
 					allEnds.add(newEndPointR);
+				}
+				if (y < blackLines.getHeight() - 1){
+					//clear to go two down (with left and right}
+					if (x > 0 ){  //can go left and down down
+						ArrayList<Integer> newEndPointLDD = tryToFindEndHelp(coordinates, 31, blackLines, 1);
+						allEnds.add(newEndPointLDD);
+					}
+					if (x < blackLines.getWidth()){ //can go down down and right
+						ArrayList<Integer> newEndPointRDD = tryToFindEndHelp(coordinates, 33, blackLines, 1);
+						allEnds.add(newEndPointRDD);
+					}
 				}
 			}
 			//filter through all ends, this should be ALL... these could be NULL but really really shouldnt be
@@ -266,7 +292,9 @@ public class Main {
 					
 				}
 			}
-			allEnds.add(allPoints.get(0));
+			if (allPoints.get(0) != null){
+				allEnds.add(allPoints.get(0));
+			}
 			//allEnds.add(allPoints.get(allPoints.size() -1 ));
 			return allEnds;
 		}
@@ -279,6 +307,10 @@ public class Main {
 		//DOWN = 12
 		//RIGHTDOWN = 13
 		//RIGHT = 3
+		//DOWNDOWNLEFT = 31
+		//DOWNDOWNRIGHT = 33
+		//RIGHTRIGHTDOWN = 23
+		//LEFTLEFTDOWN = 21
 		int x = currentCoord.get(0);
 		int y = currentCoord.get(1);
 		Color red = Color.RED;
@@ -362,7 +394,92 @@ public class Main {
         			//it's an end point!!
         			return currentCoord;
         		}
-			}else{
+			}
+			else{
+				return currentCoord;
+			}
+		}else if (dir == 31){ //down down left
+			if (x != 0 && y < blackLines.getHeight() - 1){
+				// "explore next pixel"
+				int originalColor;
+        		originalColor = blackLines.getRGB(x  - 1, y + 2);
+        		Color myColor = new Color(originalColor);
+        		possible.add(x - 1);
+    			possible.add(y + 2);
+        		if (myColor.equals(red)){
+        			returnME = tryToFindEndHelp(possible, dir, blackLines, time += 1);
+        		}else{
+        			if (time < 10){
+        				return null;
+        			}
+        			//it's an end point!!
+        			return currentCoord;
+        		}
+			}
+			else{
+				return currentCoord;
+			}
+		}else if (dir == 33){ //down down right
+			if (x != blackLines.getWidth() && y < blackLines.getHeight() - 1){
+				// "explore next pixel"
+				int originalColor;
+        		originalColor = blackLines.getRGB(x  + 1, y + 2);
+        		Color myColor = new Color(originalColor);
+        		possible.add(x + 1);
+    			possible.add(y + 2);
+        		if (myColor.equals(red)){
+        			returnME = tryToFindEndHelp(possible, dir, blackLines, time += 1);
+        		}else{
+        			if (time < 10){
+        				return null;
+        			}
+        			//it's an end point!!
+        			return currentCoord;
+        		}
+			}
+			else{
+				return currentCoord;
+			}
+		}else if (dir == 21){ //down left left
+			if (x > 1 && y != blackLines.getHeight()){
+				// "explore next pixel"
+				int originalColor;
+        		originalColor = blackLines.getRGB(x  - 2, y + 1);
+        		Color myColor = new Color(originalColor);
+        		possible.add(x - 2);
+    			possible.add(y + 1);
+        		if (myColor.equals(red)){
+        			returnME = tryToFindEndHelp(possible, dir, blackLines, time += 1);
+        		}else{
+        			if (time < 10){
+        				return null;
+        			}
+        			//it's an end point!!
+        			return currentCoord;
+        		}
+			}
+			else{
+				return currentCoord;
+			}
+		}else if (dir == 23){ //right right down
+			if (x > 1 && y < blackLines.getHeight()){
+				// "explore next pixel"
+				int originalColor;
+        		originalColor = blackLines.getRGB(x  + 2, y + 1);
+        		Color myColor = new Color(originalColor);
+        		possible.add(x + 2);
+    			possible.add(y + 1);
+        		if (myColor.equals(red)){
+        			returnME = tryToFindEndHelp(possible, dir, blackLines, time += 1);
+        		}else{
+        			if (time < 10){
+        				return null;
+        			}
+        			//it's an end point!!
+        			return currentCoord;
+        		}
+			}
+			else{
 				return currentCoord;
 			}
 		}else{
