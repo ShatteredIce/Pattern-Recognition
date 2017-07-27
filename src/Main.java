@@ -2,19 +2,61 @@
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.util.ArrayList;
+import java.util.Random;
+import java.util.Scanner;
+
 import javax.imageio.ImageIO;
 
 public class Main {
 	
+	Random random = new Random();
+	
 	final int colorThreshold = 5;
 	final int neighborMinThreshold = 6;
 	final int neighborMaxThreshold = 25;
+	Scanner scan = new Scanner(System.in);
 	
 	public Main(){
-		BufferedImage test = loadImage("./res/raw/triangle3.png");
-		storeImage(highlightShape(findEdges(convertGrayscale(test)), test), "./res/processed/triangle_out.png");
+//		BufferedImage test = loadImage("./res/raw/triangle3.png");
+//		storeImage(highlightShape(findEdges(convertGrayscale(test)), test), "./res/processed/triangle_out.png");
 		//storeImage(findEdges(convertGrayscale(test)), "./res/processed/intoutput.png");
+		String input = "input";
+		int iter = 0;
+		int trainingIndex = 3;
+		double[] data = new double[2];
 		
+		NeuralNetwork net = new NeuralNetwork();
+		while(iter <= 60000){
+			net.train(trainingIndex);
+			if(iter % 10000 == 0){
+				System.out.println("ITERATION: " + iter);
+				net.displayWeights();
+				net.displayResult();
+			}
+			iter++;
+			trainingIndex++;
+			if(trainingIndex == net.trainingData.length){
+				trainingIndex = 0;
+			}
+		}
+		
+		while(true){
+			System.out.println();
+			for(int i = 0; i < data.length; i++){
+				System.out.print("Enter data point " + (i+1) + ": ");
+				input = scan.nextLine();
+				try{
+					data[i] = Double.parseDouble(input);
+					System.out.println(data[i]);
+				}
+				catch (Exception e){
+					System.out.println("Enter a double!");
+					i--;
+				}
+			}
+			net.run(data);
+		}	
 	}
 
 	public static void main(String[] args) {
