@@ -3,6 +3,8 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -23,7 +25,7 @@ public class Main {
 		//storeImage(findEdges(convertGrayscale(test)), "./res/processed/intoutput.png");
 		String input = "input";
 		int iter = 0;
-		int trainingIndex = 3;
+		int trainingIndex = 0;
 		double[] data = new double[2];
 		
 		NeuralNetwork net = new NeuralNetwork();

@@ -79,8 +79,10 @@ public class NeuralNetwork {
 				else{
 					n.setInputs(layerOutput);
 				}
-				layerOutput = new double[layers.get(i).length];
-				layerOutput[j] = n.calculateOutput();
+			}
+			layerOutput = new double[layers.get(i).length];
+			for(int j = 0; j < layers.get(i).length; j++){
+				layerOutput[j] = layers.get(i)[j].calculateOutput();
 			}
 		}
 		return layerOutput;

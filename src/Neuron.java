@@ -12,7 +12,7 @@ public class Neuron {
 	double[] weights;
 	double lastOutput;
 	ArrayList<Double> trainingOutputs = new ArrayList<>();
-	//double biasWeight = -1;
+	double biasWeight = -1;
 	
 	public Neuron(int newInputs){
 		numInputs = newInputs;
@@ -36,7 +36,7 @@ public class Neuron {
 		for(int i = 0; i < numInputs; i++){
 			total += inputs[i] * weights[i];
 		}
-		//total += 1 * biasWeight;
+		total += 1 * biasWeight;
 		total = sigmoidFunction(total);
 		lastOutput = total;
 		
@@ -96,7 +96,7 @@ public class Neuron {
 		for(int i = 0; i < weights.length; i++){
 			weights[i] += rate * error * inputs[i];
 		}
-		//biasWeight += rate * error;
+		biasWeight += rate * error;
 		
 		return previousLayerContribution;
 		
