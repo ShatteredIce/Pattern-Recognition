@@ -4,12 +4,14 @@ import java.util.Random;
 public class NeuralNetwork {
 	
 	final Random random = new Random();
-	final int rawInputs = 2;
-	int[] neuronsInLayer = {3, 1};
+	final int rawInputs = 3;
+	int[] neuronsInLayer = {4, 3};
 	ArrayList<Neuron[]> layers = new ArrayList<>();
 	
-	double[][] trainingData = {{1, 1}, {1, 0}, {0, 1}, {0, 0}};
-	double[][] trainingAnswers = {{0}, {1}, {1}, {0}};
+	double[][] trainingData = {{1, 5, 1}, {3, 2, 1}, {0, 1, 6}, {5, 7, 5},
+			{2, 0, 1}, {4, 2, 5}, {2, 2, 2}, {7, 7, 7}, {0, 0, 0}, {3, 1, 4}};
+	double[][] trainingAnswers = {{0, 1, 0}, {1, 0, 0}, {0, 0, 1}, {0, 1, 0}, 
+			{1, 0, 0}, {0, 0, 1}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 1}};
 	
 //	double[][] trainingData = {{5, 0},{4,1},{0,3},{0,2},{1,2},{0,0}};
 //	double[][] trainingAnswers = {{1},{1},{0},{0},{1},{0}};

@@ -26,12 +26,12 @@ public class Main {
 		String input = "input";
 		int iter = 0;
 		int trainingIndex = 0;
-		double[] data = new double[2];
+		double[] data = new double[3];
 		
 		NeuralNetwork net = new NeuralNetwork();
-		while(iter <= 60000){
+		while(iter <= 600000){
 			net.train(trainingIndex);
-			if(iter % 10000 == 0){
+			if(iter % 100000 == 0){
 				System.out.println("ITERATION: " + iter);
 				net.displayWeights();
 				net.displayResult();
