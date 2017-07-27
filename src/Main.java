@@ -1,36 +1,56 @@
 //i changed it!!
 import java.awt.Color;
+import java.util.Collections;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 
 public class Main {
 	
-	final int colorThreshold = 5;
-	final int neighborMinThreshold = 6;
+	final int colorThreshold = 1;
+	final int neighborMinThreshold = 2;
 	final int neighborMaxThreshold = 25;
+	final int squareSize = 5;
+	final int blockThresh = 22;
 	
 	public Main(){
-		BufferedImage test = loadImage("./res/raw/gear1.png");
-		storeImage(highlightShape(findEdges(convertGrayscale(test)), test), "./res/processed/square_out.png");
+		
+		BufferedImage test = loadImage("./res/raw/twoshapes.png");
+		//storeImage(highlightShape(findEdges(convertGrayscale(test)), test), "./res/processed/twoshapes.png");
+		//storeImage(findEdges(convertGrayscale(test)), "./res/processed/twoshapes_red.png");
+		ArrayList<BufferedImage> tests = cropToBlock(convertGrayscale(test));
+		for(int i = 0; i < tests.size(); i ++) {
+			storeImage(tests.get(i), "./res/processed/twoshapes"+i+".png");
+			System.out.println("Saving Blocked Image");
+		}
+		/*
 		System.out.print("hello!");
 		BufferedImage shape = highlightShape(findEdges(convertGrayscale(test)), test);
-		ArrayList<ArrayList> mine = findEndpoints(findEdges(convertGrayscale(test)));
+		ArrayList<ArrayList<Integer>> mine = findEndpoints(findEdges(convertGrayscale(test)));
 		for (int i = 0; i < mine.size(); i ++){
 			ArrayList temp = mine.get(i);
-			for (int j = 0; j < 2; j ++) {
-				for (int k = 0; k < 2; k ++) {
+			for (int j = 0; j < squareSize; j ++) {
+				for (int k = 0; k < squareSize; k ++) {
 					shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(255,0,0)).getRGB());
 				}
 			}
 			System.out.println("X:" + temp.get(0) + " Y: " + temp.get(1));
 		}
-		storeImage(shape, "./res/processed/gear1_out.png");
+		storeImage(shape, "./res/processed/squarebox_out.png");
 		System.out.print("done!");
+		ArrayList<ArrayList<ArrayList<Integer>>> tine = new ArrayList<>();
+		tine.add(mine);
+		Double[][] wow = processShape(tine);
+		for (double ow: wow[0]) {
+			System.out.println(ow);
+		}
 		 
 		//storeImage(findEdges(convertGrayscale(test)), "./res/output.png");
+		*/
 	}
 
 	public static void main(String[] args) {
@@ -179,10 +199,10 @@ public class Main {
 			for (ArrayList<Integer> points : shape) {
 				double x = (double)points.get(0);
 				double y = (double)points.get(1);
-				double x1 = (double)shape.get(j+1).get(0);
-				double x2 = (double)shape.get(j-1).get(0);
-				double y1 = (double)shape.get(j+1).get(1);
-				double y2 = (double)shape.get(j-1).get(1);
+				double x1 = (double)shape.get(j == shape.size() - 1? 0: j+1).get(0);
+				double x2 = (double)shape.get(j == 0 ?shape.size() - 1 :j - 1).get(0);
+				double y1 = (double)shape.get(j == shape.size() - 1? 0: j+1).get(1);
+				double y2 = (double)shape.get(j == 0 ?shape.size() - 1 :j - 1).get(1);
 				minX = x < minX? x : minX;
 				minY = y < minY? y : minY;
 				maxX = x > maxX? x : maxX;
@@ -505,6 +525,127 @@ public class Main {
     		}
 		}
 		return listAll;
+	}
+	private ArrayList<BufferedImage> cropToBlock(BufferedImage input) {
+		ArrayList<BufferedImage> out = new ArrayList<BufferedImage>();
+		List<int[]> blocks = new ArrayList<>();
+		int[][] numSim = new int[input.getHeight()][input.getWidth()];
+		int numBlocks = 0;
+		for(int x = 2; x < input.getWidth() - 2; x ++ ) {
+			for(int y = 2; y < input.getHeight() - 2; y ++) {
+				int numSimilar = 25;
+				for(int i = -2; i < 3; i ++) {
+					Color thisColor = new Color(input.getRGB(x, y));
+					//System.out.println("Checking x:"+(x+i));
+					for (int j = -2; j < 3; j ++) {
+						//System.out.println("Checking y:"+(y+j));
+						Color thatColor = new Color(input.getRGB(x + i, y + j));
+						if(checkSimilarity(thisColor,thatColor)){
+							numSimilar --;
+						}
+					}
+				}
+				numSim[y][x] = numSimilar;
+				//System.out.print(numSimilar+",");
+			}
+			//System.out.println("");
+		}
+		/*for(int[] o : numSim) {
+			for(int x : o) {
+				System.out.print(x + " ");
+			}
+			System.out.println("");
+		}*/
+		System.out.println("done");
+		ArrayList<Integer> miXArray = new ArrayList<>();
+		ArrayList<Integer> miYArray = new ArrayList<>();
+		ArrayList<Integer> maXArray = new ArrayList<>();
+		ArrayList<Integer> maYArray = new ArrayList<>();
+		for(int i = 2; i < numSim.length-2; i ++) {
+			for(int j = 2; j < numSim[i].length-2; j ++) {
+				int current = numSim[i][j];
+				Boolean withinShape = false;
+				for(int k = 0; k < miXArray.size(); k ++) {
+					withinShape = (i < maXArray.get(k) && i > miXArray.get(k) && j < maYArray.get(k) && j > miYArray.get(k));
+					 if(withinShape) {
+						 break;
+					 }
+				}
+				if(withinShape) {
+					 continue;
+				 }
+				//System.out.println("Current is "+current);
+				if(current <= 20) {
+					ArrayList<int[]> edges = new ArrayList<>();
+					ArrayList<int[]> tested = new ArrayList<>();
+					System.out.println("Testing "+i+","+j);
+					edges = tailCheck4(numSim,i,j,edges,tested,0);
+					ArrayList<Integer> xs = new ArrayList<>();
+					ArrayList<Integer> ys = new ArrayList<>();
+					for(int[] e : edges) {
+						xs.add(e[0]);
+						ys.add(e[1]);
+					}
+					int minX = Collections.min(xs);
+					int maxX = Collections.max(xs);
+					int minY = Collections.min(ys);
+					int maxY = Collections.max(ys);
+					//System.out.println("Finished Checking "+i+","+j);
+					System.out.println(minX+","+minY+","+maxX+","+maxY);
+					maXArray.add(maxX);
+					miXArray.add(minX);
+					maYArray.add(maxY);
+					miYArray.add(minY);
+					int rectx = minX-10 >= 0 ? minX-10 : 0, recty = minY-10 >= 0 ? minY-10 : 0, rectX = maxX-minX+10 < numSim.length - 1? maxX-minX+10 : numSim.length - 1, rectY = maxY-minY+10 < numSim.length - 1? maxY-minY+10 : numSim.length - 1;
+					out.add(input.getSubimage(recty,rectx,rectY,rectX));
+				}
+			}
+		}
+		return out;
+	}
+	private ArrayList<int[]> tailCheck4(int[][] SimilarityArray, int StartX, int StartY, ArrayList<int[]> edgeArray,ArrayList<int[]> testedArray,int Iteration) {
+		int[] CurrentPoint = {StartX, StartY};
+		/*for(int[] o : testedArray) {
+			for(int i : o) {
+				System.out.print(i+" ");
+			}
+			System.out.println("has been tested");
+		}*/
+		Iteration ++;
+		//System.out.println("Iteration"+Iteration);
+		if(!ALContainsArray(testedArray,CurrentPoint)) {
+			//System.out.println("Testing ("+StartX+","+StartY+")"+" which is: "+SimilarityArray[StartX][StartY]);
+			testedArray.add(CurrentPoint);
+			if(SimilarityArray[StartX+1][StartY] > blockThresh) {
+				edgeArray = tailCheck4(SimilarityArray,StartX+1,StartY,edgeArray,testedArray, Iteration);
+			} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
+				edgeArray.add(CurrentPoint);
+			}
+			if(SimilarityArray[StartX][StartY+1] > blockThresh) {
+				edgeArray = tailCheck4(SimilarityArray,StartX,StartY+1,edgeArray,testedArray, Iteration);
+			} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
+				edgeArray.add(CurrentPoint);
+			}
+			if(SimilarityArray[StartX-1][StartY] > blockThresh) {
+				edgeArray = tailCheck4(SimilarityArray,StartX-1,StartY,edgeArray,testedArray, Iteration);
+			} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
+				edgeArray.add(CurrentPoint);
+			}
+			if(SimilarityArray[StartX][StartY-1] > blockThresh) {
+				edgeArray = tailCheck4(SimilarityArray,StartX,StartY-1,edgeArray,testedArray, Iteration);
+			} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
+				edgeArray.add(CurrentPoint);
+			}
+		}
+		return edgeArray;
+	}
+	private Boolean ALContainsArray(ArrayList<int[]> AL, int[] intArray) {
+		for(int[] iA : AL) {
+			if(Arrays.equals(iA, intArray)) {
+				return true;
+			}
+		}
+		return false;
 	}
 		
 }
