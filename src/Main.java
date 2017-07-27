@@ -3,31 +3,46 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.LinkedList;
 
 import javax.imageio.ImageIO;
 
 public class Main {
 	
 	final int colorThreshold = 5;
-	final int neighborMinThreshold = 6;
+	final int neighborMinThreshold = 5; //five or less or stack overflow 
 	final int neighborMaxThreshold = 25;
+	private ArrayList<ArrayList<Integer>> slimeTrail = new ArrayList<ArrayList<Integer>>();
 	
 	public Main(){
-		BufferedImage test = loadImage("./res/raw/gear1.png");
-		storeImage(highlightShape(findEdges(convertGrayscale(test)), test), "./res/processed/square_out.png");
+		BufferedImage test = loadImage("./res/raw/star.png");
+		storeImage(highlightShape(findEdges((convertGrayscale(test))), test), "./res/processed/star_out.png");
 		System.out.print("hello!");
 		BufferedImage shape = highlightShape(findEdges(convertGrayscale(test)), test);
-		ArrayList<ArrayList> mine = findEndpoints(findEdges(convertGrayscale(test)));
+		ArrayList<ArrayList> mine = findEndpoints((findEdges(convertGrayscale(test))));
+		System.out.println("the list size is: " + mine.size());
+		
+		
+		//shape.setRGB(536, 33, (new Color(255,0,0)).getRGB());
+		for (int k = 0; k < slimeTrail.size(); k += 1){
+			shape.setRGB(slimeTrail.get(k).get(0), slimeTrail.get(k).get(1), (new Color(255,0,0)).getRGB());
+		}
+		
 		for (int i = 0; i < mine.size(); i ++){
+			
+			//System.out.println("x is:" + mine.get(i).get(0) + ", y is: " + mine.get(i).get(1));
 			ArrayList temp = mine.get(i);
-			for (int j = 0; j < 2; j ++) {
-				for (int k = 0; k < 2; k ++) {
-					shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(255,0,0)).getRGB());
+			for (int j = -2; j < 2; j ++) {
+				for (int k = -2; k < 2; k ++) {
+					shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(0,255,0)).getRGB());
+					if (i == mine.size() -1){
+						//shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(255,255,255)).getRGB());
+					}
 				}
 			}
 			System.out.println("X:" + temp.get(0) + " Y: " + temp.get(1));
 		}
-		storeImage(shape, "./res/processed/gear1_out.png");
+		storeImage(shape, "./res/processed/star_out.png");
 		System.out.print("done!");
 		 
 		//storeImage(findEdges(convertGrayscale(test)), "./res/output.png");
@@ -209,279 +224,230 @@ public class Main {
 	
 	private ArrayList findEndpoints(BufferedImage blackLines){
 		//passing him an array list of shapes (arraylists) of points (arraylists)
-		ArrayList<ArrayList> allPoints = findAllPointsOnShapes(blackLines);
-		ArrayList<ArrayList> allEnds = new ArrayList<ArrayList>();
-		if (allPoints.size() == 0){
+		//ArrayList<ArrayList> allPoints = findAllPointsOnShapes(blackLines);
+		//I GO COUNTER CLOCKWISE AROUND, WHITE ON RIGHT FROM POV
+		
+		ArrayList<Integer> firstPoint = new ArrayList<Integer>(); //what i start from
+		ArrayList<ArrayList<Integer>> allEnds = new ArrayList<ArrayList<Integer>>();
+		
+		int picHeight = blackLines.getHeight();
+		int picWidth = blackLines.getWidth();
+		for (int counterY = 0; counterY < (picHeight) ; counterY += 1){
+    		for (int counterX = 0; counterX < (picWidth) ; counterX += 1){
+    			int originalColor;
+    			originalColor = blackLines.getRGB(counterX, counterY);
+        		Color myColor = new Color(originalColor);
+        		if (myColor.equals(Color.RED)){
+        			firstPoint.add(counterX);
+        			firstPoint.add(counterY);
+        			break;
+        		}
+        		
+    		}
+		}if (firstPoint.size() == 0){ //this means there is not a shape!!
+			System.out.println("not a shape...");
 			return null;
+			
 		}else{
-			for (int i = 0; i < allPoints.size(); i += 1){ //for each point on shape
-				ArrayList<Integer> coordinates = allPoints.get(i); //get the point
-				int x = coordinates.get(0);
-				int y = coordinates.get(1);
-				
-				//check right and three downs, but not if on edge
-				if (y != blackLines.getHeight()){ //not at the bottom of the screen
-					if (x != 0){ //if not all the way left, left down
-						ArrayList<Integer> newEndPointLD =  tryToFindEndHelp(coordinates, 11, blackLines, 1);
-						allEnds.add(newEndPointLD);
-						if (x != 1){
-							ArrayList<Integer> newEndPointLLD =  tryToFindEndHelp(coordinates, 21, blackLines, 1);
-							allEnds.add(newEndPointLLD);
-						}
-					}
-					if (x != blackLines.getWidth()){ //if not all the way right
-						//go right down
-						ArrayList<Integer> newEndPointRD =  tryToFindEndHelp(coordinates, 13, blackLines, 1);
-						allEnds.add(newEndPointRD);
-						if (x != blackLines.getWidth() - 1){
-							//can go right right down
-							ArrayList<Integer> newEndPointRRD =  tryToFindEndHelp(coordinates, 23, blackLines, 1);
-							allEnds.add(newEndPointRRD);
-						}
-					}
-					//go down
-					ArrayList<Integer> newEndPointD = tryToFindEndHelp(coordinates, 12, blackLines, 1);
-					allEnds.add(newEndPointD);
-				}
-				if (x != blackLines.getWidth()){
-					//go right
-					ArrayList<Integer> newEndPointR = tryToFindEndHelp(coordinates, 3, blackLines, 1);
-					allEnds.add(newEndPointR);
-				}
-				if (y < blackLines.getHeight() - 1){
-					//clear to go two down (with left and right}
-					if (x > 0 ){  //can go left and down down
-						ArrayList<Integer> newEndPointLDD = tryToFindEndHelp(coordinates, 31, blackLines, 1);
-						allEnds.add(newEndPointLDD);
-					}
-					if (x < blackLines.getWidth()){ //can go down down and right
-						ArrayList<Integer> newEndPointRDD = tryToFindEndHelp(coordinates, 33, blackLines, 1);
-						allEnds.add(newEndPointRDD);
-					}
-				}
-			}
-			//filter through all ends, this should be ALL... these could be NULL but really really shouldnt be
-			for (int j = 0; j < allEnds.size(); j +=1){
-				if (allEnds.get(j) == null){
-					allEnds.remove(j);
-					j -= 1;
-				}else{ 
-					boolean alreadyThere = false;
-					for (int k = 0; k < j; k +=1){
-						//if (allEnds.get(j).get(0).equals(allEnds.get(k).get(0)) && allEnds.get(j).get(1).equals( allEnds.get(k).get(1))){
-						int jO = (int)allEnds.get(j).get(0);
-						int kO = (int)allEnds.get(k).get(0);
-						int kL = (int)allEnds.get(k).get(1);
-						int jL = (int)allEnds.get(j).get(1);
-						if (Math.abs(jO - kO) <= 5){
-							if (Math.abs(jL - kL) <= 5 ){
-								alreadyThere = true;
-								break;
-							}
-						}		
-					}
-					if (alreadyThere){
-						allEnds.remove(j);
-						j -= 1;
-					}
-					
-				}
-			}
-			if (allPoints.get(0) != null){
-				allEnds.add(allPoints.get(0));
-			}
-			//allEnds.add(allPoints.get(allPoints.size() -1 ));
-			return allEnds;
+			//ArrayList<ArrayList<Integer>> thePoints = tryToFindEndHelp(firstPoint, blackLines, 0.0, new LinkedList<ArrayList<Double>>(), true, new ArrayList<ArrayList<Integer>>(), firstPoint);
+			firstPoint.remove(0);
+			firstPoint.remove(0);
+			firstPoint.add(234);
+			firstPoint.add(200);
+			
+			ArrayList<ArrayList<Integer>> thePoints = tryToFindEndHelp(firstPoint, blackLines, 0.0, new LinkedList<ArrayList<Double>>(), true, new ArrayList<ArrayList<Integer>>(), firstPoint, -1);
+			System.out.println("thePoints size is: " + thePoints.size());
+			return thePoints;
 		}
+		
+		
+	}
+
+	private ArrayList<ArrayList<Integer>> tryToFindEndHelp(ArrayList<Integer> currentCoord, BufferedImage blackLines, double average, LinkedList<ArrayList<Double>> history, boolean first, ArrayList<ArrayList<Integer>> masterList, ArrayList<Integer> firstPoint, int currentDir){ //this is recursive
+		//ends if hits the edge of screen OR can't find colored pixel
+		
+		//current coord is the next point along the edge. searching for the next point
+		slimeTrail.add(currentCoord);
+		int x = currentCoord.get(0);
+		int y = currentCoord.get(1);
+		int nextX = -1;
+		int nextY = -1;
+		int maxListNumber = 50; //change this to change sensitivity THIS MUST BE ODD (i think?)
+		ArrayList<ArrayList<Integer>> returnME = new ArrayList<ArrayList<Integer>>();
+		int dir = -1;
+
+		if (x != 0){ //not on left edge
+			if (y != 0){ //not on top screen
+				//look up left
+				if (nextPixelHelper(x -1, y-1, blackLines, 0)){
+					nextX = x -1; 
+					nextY = y -1;
+					dir = 10;
+				}
+			}
+			if (y != blackLines.getHeight()){ //not on bottom screen
+				//look down left
+				if (nextPixelHelper(x - 1, y + 1, blackLines, 1)){
+					nextX = x - 1; 
+					nextY = y + 1;
+					dir = 12;
+				}
+			}
+			if (nextPixelHelper(x-1, y, blackLines, 1)){ //go left left
+				nextX = x-1;
+				nextY = y;
+				dir = 11;
+			}
+		}
+		if (x != blackLines.getWidth()){ //not on right edge
+			if (y != 0){ //not on top screen
+				//look up right up
+				if (nextPixelHelper(x + 1, y-1, blackLines, 3)){
+					nextX = x +1; 
+					nextY = y -1;
+					dir = 16;
+				}
+			}
+			if (y != blackLines.getHeight()){ //not on bottom screen
+				//look down right
+				if (nextPixelHelper(x + 1, y + 1, blackLines, 2)){
+					nextX = x + 1; 
+					nextY = y + 1;
+					dir = 14;
+				}
+			}
+			//look right right
+			if (nextPixelHelper(x + 1, y, blackLines, 3)){
+				nextX = x + 1; 
+				nextY = y;
+				dir = 15;
+			}
+		}
+		if (y != 0){ //not on top screen
+			//look up up
+			if (nextPixelHelper(x, y-1, blackLines, 0)){
+				nextX = x; 
+				nextY = y -1;
+				dir = 17;
+			}
+		}
+		if (y != blackLines.getHeight()){ //not on bottom screen
+			//look down down
+			if (nextPixelHelper(x, y+1, blackLines, 2)){
+				nextX = x; 
+				nextY = y + 1;
+				dir = 13;
+			}
+		}if (first == false && firstPoint.get(0) == nextX && firstPoint.get(1)== nextY){ //made it to the begginning and is not the first time around
+			System.out.println("i made it to my base case");
+			return masterList; // this is my base case
+			
+		}else if (nextX >= 0){ //means has been changed, since coords are not negative
+			ArrayList<Integer> newCoords = new ArrayList<Integer>();
+			ArrayList<Double> bundledHist = new ArrayList<Double>(); //order is average, x, y
+			double slope = (double)(y - nextY) / (x - nextX); //find the slope in a double 
+			if (first){ //find / change the running average -- use boolean "first"
+				average = slope;
+			}else{
+				average += slope;
+				average = average/2;
+			}
+			//if linked list is len odd, and delete from front each time add to back.. compare slope to first element in linked list
+			if (history.size() > maxListNumber){
+				System.out.println("you erred. please relook your code not in a rage. or, there is no shape so please relook the data");
+				//should i return null meaning no polygon, or return the found verticees
+			}else if (history.size() == maxListNumber){
+				ArrayList<Double> passME = new ArrayList<Double>();
+				for (int i = 1; i < history.size(); i += 1){
+					passME.add(history.get(i).get(3));
+				}
+				//System.out.println("im outside the if statement");
+				if (!(patternMatch(passME, dir))){//compare current slope average to this one, kinda
+					ArrayList<Integer> corner = new ArrayList<Integer>(); //the guessed corner, last point in history
+		
+					corner.add(nextX);
+					corner.add(nextY);
+					masterList.add(corner);
+					
+					//this loop is so it doesnt detect the end of the corner (:
+					int thisManyToDelete = history.size()/2; 
+					while(thisManyToDelete > 0){
+						history.removeFirst();
+						thisManyToDelete -= 1;
+					}
+				}else{
+					history.removeFirst();
+				}
+			}
+			//if they are the same
+			bundledHist.add(average);
+			bundledHist.add((double)nextX);
+			bundledHist.add((double)nextY);
+			bundledHist.add((double) dir);
+			history.addLast(bundledHist);
+			
+			newCoords.add(nextX);
+			newCoords.add(nextY);
+			
+			returnME = tryToFindEndHelp(newCoords, blackLines, average, history, false, masterList, firstPoint, dir);
+			
+			}else if (history.size() > maxListNumber){
+				System.out.println("well shit. size should never exceed max number");
+			}
+		else{
+			System.out.println("i didnt find  a next point. i am this x: " + x + " and this y: " + y);
+		}
+		//System.out.println("returnME's size is " + returnME.size());
+		return returnME;
 		
 	}
 	
-	private ArrayList<Integer> tryToFindEndHelp(ArrayList<Integer> currentCoord, int dir, BufferedImage blackLines, int time){ //this is recursive
-		//ends if hits the edge of screen OR can't find colored pixel
-		//LEFTDOWN = 11
-		//DOWN = 12
-		//RIGHTDOWN = 13
-		//RIGHT = 3
-		//DOWNDOWNLEFT = 31
-		//DOWNDOWNRIGHT = 33
-		//RIGHTRIGHTDOWN = 23
-		//LEFTLEFTDOWN = 21
-		int x = currentCoord.get(0);
-		int y = currentCoord.get(1);
-		Color red = Color.RED;
-		ArrayList<Integer> possible = new ArrayList<Integer>();
-		ArrayList<Integer> returnME;
-		if (dir == 11){ //left down
-			if (x != 0 && y != blackLines.getHeight()){
-				// "explore next pixel"
-				int originalColor;
-        		originalColor = blackLines.getRGB(x  - 1, y + 1);
-        		Color myColor = new Color(originalColor);
-        		possible.add(x-1);
-    			possible.add(y+1);
-        		if (myColor.equals(red)){
-        			returnME = tryToFindEndHelp(possible, dir, blackLines, time += 1);
-        		}else{
-        			//it's an end point!!
-        			if (time < 10){
-        				return null;
-        			}
-        			return currentCoord;
-        		}
-			}else{
-				return currentCoord;
-			}
-			
-		}else if (dir == 12){ //DOWN
-			if (y != blackLines.getHeight()){
-				// "explore next pixel"
-				int originalColor;
-        		originalColor = blackLines.getRGB(x, y + 1);
-        		Color myColor = new Color(originalColor);
-        		possible.add(x);
-    			possible.add(y+1);
-        		if (myColor.equals(red)){
-        			returnME = tryToFindEndHelp(possible, dir, blackLines, time += 1);
-        		}else{
-        			//it's an end point!!
-        			if (time < 10){
-        				return null;
-        			}
-        			return currentCoord;
-        		}
-			}else{
-				return currentCoord;
-			}
-		}else if (dir == 13){ //right down
-			if (x != blackLines.getWidth() && y != blackLines.getHeight()){
-				// "explore next pixel"
-				int originalColor;
-        		originalColor = blackLines.getRGB(x  + 1, y + 1);
-        		Color myColor = new Color(originalColor);
-        		possible.add(x + 1);
-    			possible.add(y+1);
-        		if (myColor.equals(red)){
-        			returnME = tryToFindEndHelp(possible, dir, blackLines, time += 1);
-        		}else{
-        			if (time < 10){
-        				return null;
-        			}
-        			//it's an end point!!
-        			return currentCoord;
-        		}
-			}else{
-				return currentCoord;
-			}
-		}else if (dir == 3){ //right
-			if (x != blackLines.getWidth()){
-				// "explore next pixel"
-				int originalColor;
-        		originalColor = blackLines.getRGB(x  + 1, y);
-        		Color myColor = new Color(originalColor);
-        		possible.add(x + 1);
-    			possible.add(y);
-        		if (myColor.equals(red)){
-        			returnME = tryToFindEndHelp(possible, dir, blackLines, time += 1);
-        		}else{
-        			if (time < 10){
-        				return null;
-        			}
-        			//it's an end point!!
-        			return currentCoord;
-        		}
-			}
-			else{
-				return currentCoord;
-			}
-		}else if (dir == 31){ //down down left
-			if (x != 0 && y < blackLines.getHeight() - 1){
-				// "explore next pixel"
-				int originalColor;
-        		originalColor = blackLines.getRGB(x  - 1, y + 2);
-        		Color myColor = new Color(originalColor);
-        		possible.add(x - 1);
-    			possible.add(y + 2);
-        		if (myColor.equals(red)){
-        			returnME = tryToFindEndHelp(possible, dir, blackLines, time += 1);
-        		}else{
-        			if (time < 10){
-        				return null;
-        			}
-        			//it's an end point!!
-        			return currentCoord;
-        		}
-			}
-			else{
-				return currentCoord;
-			}
-		}else if (dir == 33){ //down down right
-			if (x != blackLines.getWidth() && y < blackLines.getHeight() - 1){
-				// "explore next pixel"
-				int originalColor;
-        		originalColor = blackLines.getRGB(x  + 1, y + 2);
-        		Color myColor = new Color(originalColor);
-        		possible.add(x + 1);
-    			possible.add(y + 2);
-        		if (myColor.equals(red)){
-        			returnME = tryToFindEndHelp(possible, dir, blackLines, time += 1);
-        		}else{
-        			if (time < 10){
-        				return null;
-        			}
-        			//it's an end point!!
-        			return currentCoord;
-        		}
-			}
-			else{
-				return currentCoord;
-			}
-		}else if (dir == 21){ //down left left
-			if (x > 1 && y != blackLines.getHeight()){
-				// "explore next pixel"
-				int originalColor;
-        		originalColor = blackLines.getRGB(x  - 2, y + 1);
-        		Color myColor = new Color(originalColor);
-        		possible.add(x - 2);
-    			possible.add(y + 1);
-        		if (myColor.equals(red)){
-        			returnME = tryToFindEndHelp(possible, dir, blackLines, time += 1);
-        		}else{
-        			if (time < 10){
-        				return null;
-        			}
-        			//it's an end point!!
-        			return currentCoord;
-        		}
-			}
-			else{
-				return currentCoord;
-			}
-		}else if (dir == 23){ //right right down
-			if (x > 1 && y < blackLines.getHeight()){
-				// "explore next pixel"
-				int originalColor;
-        		originalColor = blackLines.getRGB(x  + 2, y + 1);
-        		Color myColor = new Color(originalColor);
-        		possible.add(x + 2);
-    			possible.add(y + 1);
-        		if (myColor.equals(red)){
-        			returnME = tryToFindEndHelp(possible, dir, blackLines, time += 1);
-        		}else{
-        			if (time < 10){
-        				return null;
-        			}
-        			//it's an end point!!
-        			return currentCoord;
-        		}
-			}
-			else{
-				return currentCoord;
-			}
-		}else{
-			System.out.println("ya goofed!!");
-			return null;
+	private boolean patternMatch (ArrayList<Double> pattern, int myDir){
+		boolean patternMatches = false;
+		for (int i = 0; i < pattern.size() - 3; i += 1){
+			//if (pattern.get(i).intValue() == pattern.get(pattern.size()-3)){
+				if (pattern.get(i + 1).intValue() == pattern.get(pattern.size()-2)){
+					if (pattern.get(i + 2).intValue() == pattern.get(pattern.size()-1)){
+						if (pattern.get(i + 3).intValue() == myDir){
+							patternMatches = true;
+						}
+					}
+				}
+			//}
 		}
-		return returnME; 
+		return patternMatches;
+	}
+	
+	private boolean nextPixelHelper(int x, int y, BufferedImage blackLines, int dir){ //figure out the next pixel
+		//x y is the coordinates in question
+		boolean next = false;
+		Color mine = new Color(blackLines.getRGB(x, y));
+		if (mine.equals(Color.RED)){
+			Color mine1;
+			if (dir == 0){ //right is right
+				mine1 = new Color(blackLines.getRGB(x + 1, y));
+				if (!(mine1.equals(Color.RED))){ //if right is white
+					next = true;
+				}
+			}else if (dir == 1){ //up is right
+				mine1 = new Color(blackLines.getRGB(x, (y - 1)));
+				if (!(mine1.equals(Color.RED))){ //if right is white
+					next = true;
+				}
+			}else if (dir == 2){ //left is right
+				mine1 = new Color(blackLines.getRGB(x - 1, y));
+				if (!(mine1.equals(Color.RED))){ //if right is white
+					next = true;
+				}
+			}else if (dir == 3){ //down is right
+				mine1 = new Color(blackLines.getRGB(x, y + 1));
+				if (!(mine1.equals(Color.RED))){ //if right is white
+					next = true;
+				}
+			}
+		}
+		
+		return next;
 	}
 	
 	private ArrayList findAllPointsOnShapes(BufferedImage blackLines){
@@ -490,8 +456,8 @@ public class Main {
 		int picHeight = blackLines.getHeight();
 		Color red = Color.RED;
 		ArrayList<ArrayList> listAll = new ArrayList<ArrayList>();
-		for (int counterX = 0; counterX < (picWidth) ; counterX += 1){
-    		for (int counterY = 0; counterY < (picHeight) ; counterY += 1){
+		for (int counterY = 0; counterY < (picHeight) ; counterY += 1){
+    		for (int counterX = 0; counterX < (picWidth) ; counterX += 1){
     			int originalColor;
     			originalColor = blackLines.getRGB(counterX, counterY);
         		Color myColor = new Color(originalColor);
@@ -505,6 +471,43 @@ public class Main {
     		}
 		}
 		return listAll;
+	}
+	
+	private ArrayList endPointPreciser(ArrayList<ArrayList<Integer>> endPoints, BufferedImage blackLines){
+		ArrayList <ArrayList> precise = new ArrayList<ArrayList>(); //what i will return
+		for (int i = 0; i < endPoints.size(); i += 1){
+			ArrayList<Integer> temporaryX = new ArrayList<Integer>();
+			ArrayList<Integer> temporaryY = new ArrayList<Integer>();
+			//need to add in a way to make sure not on edge
+			for (int j = -4; j < 5; j+=1){
+				for (int k = -4; k < 5; k +=1){
+					int originalColor;
+	    			originalColor = blackLines.getRGB(endPoints.get(i).get(0) + j, endPoints.get(i).get(1) + k);
+	        		Color myColor = new Color(originalColor);
+	        		if (myColor.equals(Color.RED)){
+	        			temporaryX.add(endPoints.get(i).get(0) + j);
+	        			temporaryY.add((endPoints.get(i).get(1) + k));
+	        		}
+				}
+			}
+			
+			int xTot = 0;
+			for (int m = 0; m < temporaryX.size(); m += 1){
+				xTot += temporaryX.get(m);
+			}
+			int preciseX = xTot / temporaryX.size();
+			int yTot = 0;
+			for (int n = 0; n < temporaryY.size(); n += 1){
+				yTot += temporaryY.get(n);
+			}
+			int preciseY = yTot / temporaryY.size();
+			
+			ArrayList<Integer> myList = new ArrayList<Integer>();
+			myList.add(preciseX);
+			myList.add(preciseY);
+			precise.add(myList);
+		}
+		return precise;
 	}
 		
 }
