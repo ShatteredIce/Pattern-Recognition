@@ -26,10 +26,17 @@ public class Main {
 		String input = "input";
 		int iter = 0;
 		int trainingIndex = 0;
+<<<<<<< HEAD
 		NeuralNetwork net = new NeuralNetwork();
 		double[] data = new double[net.getNumInputs()];
 		
 		while(iter <= 50000000){
+=======
+		double[] data = new double[2];
+		
+		NeuralNetwork net = new NeuralNetwork();
+		while(iter <= 1000000){
+>>>>>>> 4237abbe4f3e35699a0ae018ac33331d6358d654
 			net.train(trainingIndex);
 			if(iter % 100000 == 0){
 				System.out.println("ITERATION: " + iter);

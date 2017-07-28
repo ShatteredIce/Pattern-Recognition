@@ -4,27 +4,54 @@ import java.util.Random;
 public class NeuralNetwork {
 	
 	final Random random = new Random();
-	final int rawInputs = 3;
-	int[] neuronsInLayer = {4, 3};
+	final int rawInputs = 2;
+	int[] neuronsInLayer = {8, 4};
 	ArrayList<Neuron[]> layers = new ArrayList<>();
 	
-	double[][] trainingData = {{5, 1, 1}, {7, 6, 1}, {3, 0, 2}, {5, 7, 5},
-			{2, 6, 1}, {0, 4, 3}, {1, 1, 4}, {7, 2, 8}, {6, 8, 9}, 
-			{2, 2, 2}, {7, 7, 7}, {0, 0, 0}, {5, 5, 4}, {3, 1, 3},
-			{2, 6, 6}, {9, 9, 5}, {6, 2, 6}, {1, 3, 3}, {6, 6, 2}, 
-			{8, 7, 8}, {3, 4, 4}};
+//	double[][] trainingData = {{5, 1, 1}, {7, 6, 1}, {3, 0, 2}, {5, 7, 5},
+//			{2, 6, 1}, {0, 4, 3}, {1, 1, 4}, {7, 2, 8}, {6, 8, 9}, 
+//			{2, 2, 2}, {7, 7, 7}, {0, 0, 0}, {5, 5, 4}, {3, 1, 3},
+//			{2, 6, 6}, {9, 9, 5}, {6, 2, 6}, {1, 3, 3}, {6, 6, 2}, 
+//			{8, 7, 8}, {3, 4, 4}};
+//	
+//	double[][] trainingAnswers = {{1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {0, 1, 0},
+//			{0, 1, 0}, {0, 1, 0}, {0, 0, 1}, {0, 0, 1}, {0, 0, 1}, 
+//			{0.33, 0.33, 0.33}, {0.33, 0.33, 0.33}, {0.33, 0.33, 0.33}, {0.5, 0.5, 0}, {0.5, 0, 0.5},
+//			{0, 0.5, 0.5}, {0.5, 0.5, 0}, {0.5, 0, 0.5}, {0, 0.5, 0.5},
+//			{0.5, 0.5, 0}, {0.5, 0, 0.5}, {0, 0.5, 0.5}};
+//	
 	
-	double[][] trainingAnswers = {{1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {0, 1, 0},
-			{0, 1, 0}, {0, 1, 0}, {0, 0, 1}, {0, 0, 1}, {0, 0, 1}, 
-			{0.33, 0.33, 0.33}, {0.33, 0.33, 0.33}, {0.33, 0.33, 0.33}, {0.5, 0.5, 0}, {0.5, 0, 0.5},
-			{0, 0.5, 0.5}, {0.5, 0.5, 0}, {0.5, 0, 0.5}, {0, 0.5, 0.5},
-			{0.5, 0.5, 0}, {0.5, 0, 0.5}, {0, 0.5, 0.5}};
-	
-	
-//	double[][] trainingData = {{5, 0},{4,1},{0,3},{0,2},{1,2},{0,0}};
-//	double[][] trainingAnswers = {{1},{1},{0},{0},{1},{0}};
+	final int trainingSetSize = 100;
+	final int trainingMax = 100;
+	double[][] trainingData = new double[trainingSetSize][3];
+	double[][] trainingAnswers = new double[trainingSetSize][3];
+
 	
 	public NeuralNetwork(){
+		//fill training data with random numbers
+		for(double[] tD : trainingData) {
+			tD[0] = random.nextInt(trainingMax);
+			tD[1] = random.nextInt(trainingMax);
+			tD[2] = random.nextInt(trainingMax);
+		}
+		for(int i = 0; i < trainingSetSize; i ++) {
+			double max = Integer.MIN_VALUE;
+			int highestIndex = -1;
+			int k = 0;
+			for(double td : trainingData[i]) {
+				if(td > max) {
+					max = td;
+					highestIndex = k;
+				}
+				k++;
+			}
+			System.out.println(max);
+			System.out.println(highestIndex);
+			for(int j= 0; j < 3; j ++) {
+				trainingAnswers[i][j] = j == highestIndex? 1 : 0;
+			}
+		}
+		
 		//populate layers of neurons
 		for(int i = 0; i < neuronsInLayer.length; i++){
 			Neuron[] layer = new Neuron[neuronsInLayer[i]];
