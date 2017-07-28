@@ -8,10 +8,18 @@ public class NeuralNetwork {
 	int[] neuronsInLayer = {4, 3};
 	ArrayList<Neuron[]> layers = new ArrayList<>();
 	
-	double[][] trainingData = {{1, 5, 1}, {3, 2, 1}, {0, 1, 6}, {5, 7, 5},
-			{2, 0, 1}, {4, 2, 5}, {2, 2, 2}, {7, 7, 7}, {0, 0, 0}, {3, 1, 4}};
-	double[][] trainingAnswers = {{0, 1, 0}, {1, 0, 0}, {0, 0, 1}, {0, 1, 0}, 
-			{1, 0, 0}, {0, 0, 1}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 1}};
+	double[][] trainingData = {{5, 1, 1}, {7, 2, 1}, {3, 0, 2}, {5, 7, 5},
+			{2, 6, 1}, {0, 4, 3}, {1, 1, 4}, {7, 2, 8}, {6, 8, 9}, 
+			{2, 2, 2}, {7, 7, 7}, {0, 0, 0}, {5, 5, 4}, {3, 1, 3},
+			{2, 6, 6}, {9, 9, 5}, {6, 2, 6}, {1, 3, 3}, {6, 6, 2}, 
+			{8, 7, 8}, {3, 4, 4}};
+	
+	double[][] trainingAnswers = {{1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {0, 1, 0},
+			{0, 1, 0}, {0, 1, 0}, {0, 0, 1}, {0, 0, 1}, {0, 0, 1}, 
+			{0.33, 0.33, 0.33}, {0.33, 0.33, 0.33}, {0.33, 0.33, 0.33}, {0.5, 0.5, 0}, {0.5, 0, 0.5},
+			{0, 0.5, 0.5}, {0.5, 0.5, 0}, {0.5, 0, 0.5}, {0, 0.5, 0.5},
+			{0.5, 0.5, 0}, {0.5, 0, 0.5}, {0, 0.5, 0.5}};
+	
 	
 //	double[][] trainingData = {{5, 0},{4,1},{0,3},{0,2},{1,2},{0,0}};
 //	double[][] trainingAnswers = {{1},{1},{0},{0},{1},{0}};
@@ -31,7 +39,7 @@ public class NeuralNetwork {
 	
 	public void run(double[] input){
 		calculate(input);
-		displayResult();
+		displayResult(true);
 	}
 	
 	public void train(int trainingIndex){
@@ -90,12 +98,18 @@ public class NeuralNetwork {
 		return layerOutput;
 	}
 	
-	public void displayResult(){
+	public void displayResult(boolean formatted){
 		int lastLayer = layers.size() - 1;
 		System.out.println("Last Layer Results: ");
+		if(formatted) System.out.println("(formatted output)");
 		for (int i = 0; i < layers.get(lastLayer).length; i++) {
 			Neuron n = layers.get(lastLayer)[i];
-			System.out.println("Neuron " + i + ": " + n.lastOutput);
+			if(formatted){
+				System.out.println("Neuron " + i + ": " + Math.round(n.lastOutput*1000000)/10000d);
+			}
+			else{
+				System.out.println("Neuron " + i + ": " + n.lastOutput);
+			}
 		}
 		System.out.println();
 	}

@@ -6,12 +6,11 @@ public class Neuron {
 	static Random random = new Random();
 	
 	int numInputs;
-	final double rate = 1;
+	final double rate = 0.1;
 	
 	double[] inputs;
 	double[] weights;
 	double lastOutput;
-	ArrayList<Double> trainingOutputs = new ArrayList<>();
 	double biasWeight = -1;
 	
 	public Neuron(int newInputs){
@@ -111,11 +110,6 @@ public class Neuron {
 			System.out.println(weights[i]);
 		}
 	}
-	
-	public void clearTrainingOutputs(){
-		trainingOutputs.clear();
-	}
-	
-	
+		
 
 }
