@@ -8,7 +8,7 @@ public class NeuralNetwork {
 	int[] neuronsInLayer = {4, 3};
 	ArrayList<Neuron[]> layers = new ArrayList<>();
 	
-	double[][] trainingData = {{5, 1, 1}, {7, 2, 1}, {3, 0, 2}, {5, 7, 5},
+	double[][] trainingData = {{5, 1, 1}, {7, 6, 1}, {3, 0, 2}, {5, 7, 5},
 			{2, 6, 1}, {0, 4, 3}, {1, 1, 4}, {7, 2, 8}, {6, 8, 9}, 
 			{2, 2, 2}, {7, 7, 7}, {0, 0, 0}, {5, 5, 4}, {3, 1, 3},
 			{2, 6, 6}, {9, 9, 5}, {6, 2, 6}, {1, 3, 3}, {6, 6, 2}, 
@@ -123,6 +123,10 @@ public class NeuralNetwork {
 			}
 			System.out.println();
 		}
+	}
+	
+	public int getNumInputs(){
+		return rawInputs;
 	}
 
 }

@@ -6,17 +6,20 @@ public class Neuron {
 	static Random random = new Random();
 	
 	int numInputs;
-	final double rate = 0.1;
+	final double rate = 0.001;
 	
 	double[] inputs;
 	double[] weights;
 	double lastOutput;
+	double[] previousWeightDeltas;
 	double biasWeight = -1;
+	double momentumWeight = 0;
 	
 	public Neuron(int newInputs){
 		numInputs = newInputs;
 		inputs = new double[numInputs];
 		weights = new double[numInputs];
+		previousWeightDeltas = new double[numInputs];
 		//initializes random weights between -2.0 to 2.0
 		for(int i = 0; i < numInputs; i++){
 			weights[i] = 2 * random.nextDouble() - 1;
@@ -93,7 +96,8 @@ public class Neuron {
 		
 		//update actual weights
 		for(int i = 0; i < weights.length; i++){
-			weights[i] += rate * error * inputs[i];
+			weights[i] += (rate * error * inputs[i]) + (previousWeightDeltas[i] * momentumWeight);
+			previousWeightDeltas[i] = rate * error * inputs[i];
 		}
 		biasWeight += rate * error;
 		
