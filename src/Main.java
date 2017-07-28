@@ -22,49 +22,52 @@ public class Main {
 	private ArrayList<ArrayList<Integer>> slimeTrail = new ArrayList<ArrayList<Integer>>();
 	
 	public Main(){
-		String shapeName = "triangle1";
-		BufferedImage test = loadImage("./res/raw/" + shapeName + ".png");
-		storeImage(highlightShape(findEdges((convertGrayscale(test))), test), "./res/processed/" + shapeName+ "_out.png");
-		System.out.print("hello!");
-		BufferedImage shape = highlightShape(findEdges(convertGrayscale(test)), test);
-		ArrayList<ArrayList<Integer>> mine = findEndpoints((findEdges(convertGrayscale(test))));
-		System.out.println("the list size is: " + mine.size());
-		
-		
-		//shape.setRGB(536, 33, (new Color(255,0,0)).getRGB());
-		for (int k = 0; k < slimeTrail.size(); k += 1){
-			shape.setRGB(slimeTrail.get(k).get(0), slimeTrail.get(k).get(1), (new Color(255,0,0)).getRGB());
-		}
-		for (int i = 0; i < mine.size(); i ++){
+		String shapeName = "twoshapes";
+		BufferedImage best = loadImage("./res/raw/" + shapeName + ".bmp");
+		ArrayList<BufferedImage> tests = cropToBlock(best);
+		for(BufferedImage test : tests) {
+			storeImage(highlightShape(findEdges((convertGrayscale(test))), test), "./res/processed/" + shapeName+ "_out.png");
+			System.out.print("hello!");
+			BufferedImage shape = highlightShape(findEdges(convertGrayscale(test)), test);
+			ArrayList<ArrayList<Integer>> mine = findEndpoints((findEdges(convertGrayscale(test))));
+			System.out.println("the list size is: " + mine.size());
 			
-			//System.out.println("x is:" + mine.get(i).get(0) + ", y is: " + mine.get(i).get(1));
-			ArrayList temp = mine.get(i);
-			for (int j = -2; j < 2; j ++) {
-				for (int k = -2; k < 2; k ++) {
-					shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(0,255,0)).getRGB());
-					if (i == mine.size() -1){
-						//shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(255,255,255)).getRGB());
+			
+			//shape.setRGB(536, 33, (new Color(255,0,0)).getRGB());
+			for (int k = 0; k < slimeTrail.size(); k += 1){
+				shape.setRGB(slimeTrail.get(k).get(0), slimeTrail.get(k).get(1), (new Color(255,0,0)).getRGB());
+			}
+			for (int i = 0; i < mine.size(); i ++){
+				
+				//System.out.println("x is:" + mine.get(i).get(0) + ", y is: " + mine.get(i).get(1));
+				ArrayList temp = mine.get(i);
+				for (int j = -2; j < 2; j ++) {
+					for (int k = -2; k < 2; k ++) {
+						shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(0,255,0)).getRGB());
+						if (i == mine.size() -1){
+							//shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(255,255,255)).getRGB());
+						}
 					}
 				}
+				System.out.println("X:" + temp.get(0) + " Y: " + temp.get(1));
 			}
-			System.out.println("X:" + temp.get(0) + " Y: " + temp.get(1));
-		}
-		storeImage(shape, "./res/processed/" + shapeName + "_out.png");
-		ArrayList<ArrayList<ArrayList<Integer>>> myList = new ArrayList<ArrayList<ArrayList<Integer>>>();
-		myList.add(mine);
-		
-		Double[][] my = processShape(myList);
-		for (Double[] value: my){
-			for (Double actualValue : value){
-				System.out.println(actualValue);
+			storeImage(shape, "./res/processed/" + shapeName + "_out.png");
+			ArrayList<ArrayList<ArrayList<Integer>>> myList = new ArrayList<ArrayList<ArrayList<Integer>>>();
+			myList.add(mine);
+			
+			Double[][] my = processShape(myList);
+			for (Double[] value: my){
+				for (Double actualValue : value){
+					System.out.println(actualValue);
+				}
 			}
-		}
-		System.out.print("done!");
-		ArrayList<ArrayList<ArrayList<Integer>>> tine = new ArrayList<>();
-		tine.add(mine);
-		Double[][] wow = processShape(tine);
-		for (double ow: wow[0]) {
-			System.out.println(ow);
+			System.out.print("done!");
+			ArrayList<ArrayList<ArrayList<Integer>>> tine = new ArrayList<>();
+			tine.add(mine);
+			Double[][] wow = processShape(tine);
+			for (double ow: wow[0]) {
+				System.out.println(ow);
+			}
 		}
 		 
 		//storeImage(findEdges(convertGrayscale(test)), "./res/output.png");
@@ -227,8 +230,13 @@ public class Main {
 				minY = y < minY ? y : minY;
 				maxX = x > maxX ? x : maxX;
 				maxY = y > maxY ? y : maxY;
-				angles[j] = Math.PI - (Math.atan(Math.abs(y2 - y) / Math.abs(x2 - x))
-						+ Math.atan(Math.abs(y1 - y) / Math.abs(x1 - x)));
+				double a = Math.sqrt(sqr(x-x1)+sqr(y-y1));
+				double b = Math.sqrt(sqr(x-x2)+sqr(y-y2));
+				double c = Math.sqrt(sqr(x2-x1)+sqr(y2-y1));
+				System.out.println("Distances 1,2,&3 are"+a+", "+b+", & "+c);
+				double C = Math.acos((sqr(c)-(sqr(a)+sqr(b)))/(-2*a*b));
+				System.out.println("Before acos:"+C);
+				angles[j] = C;
 				sum += angles[j];
 				j++;
 			}
@@ -236,6 +244,7 @@ public class Main {
 			double sqDiffSum = 0;
 			for (double angle: angles) {
 				System.out.println("angle: "+angle);
+				System.out.println("angle in degrees: "+(angle*180/Math.PI));
 				sqDiffSum += (avg - angle) * (avg - angle);
 			}
 			double r = (maxX - minX) / (maxY - minY);
@@ -535,13 +544,12 @@ public class Main {
 			}
 			//System.out.println("");
 		}
-		for(int[] o : numSim) {
-			for(int x : o) {
-				System.out.print(x + " ");
-			}
-			System.out.println("");
-		}
-		System.out.println("done");
+//		for(int[] o : numSim) {
+//			for(int x : o) {
+//				System.out.print(x + " ");
+//			}
+//			System.out.println("");
+//		}
 		ArrayList<Integer> miXArray = new ArrayList<>();
 		ArrayList<Integer> miYArray = new ArrayList<>();
 		ArrayList<Integer> maXArray = new ArrayList<>();
@@ -564,7 +572,7 @@ public class Main {
 				if(withinShape) {
 					 continue;
 				 }
-				//System.out.println("Current is "+current);
+				System.out.println("Current is "+current);
 				if(current < blockThresh - differentiator) {
 					ArrayList<int[]> edges = new ArrayList<>();
 					ArrayList<int[]> tested = new ArrayList<>();
@@ -607,7 +615,7 @@ public class Main {
 			System.out.println("has been tested");
 		}*/
 		Iteration ++;
-		//System.out.println("Iteration"+Iteration);
+		System.out.println("Iteration"+Iteration);
 		if(!ALContainsArray(testedArray,CurrentPoint)) {
 			//System.out.println("Testing ("+StartX+","+StartY+")"+" which is: "+SimilarityArray[StartX][StartY]);
 			testedArray.add(CurrentPoint);
@@ -695,5 +703,7 @@ public class Main {
 		}
 		return precise;
 	}
-		
+	private double sqr(double in) {
+		return in * in;
+	}
 }
