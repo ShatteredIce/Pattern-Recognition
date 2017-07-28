@@ -28,6 +28,21 @@ public class NeuralNetwork {
 
 	
 	public NeuralNetwork(){
+		generateTrainingData();
+		
+		//populate layers of neurons
+		for(int i = 0; i < neuronsInLayer.length; i++){
+			Neuron[] layer = new Neuron[neuronsInLayer[i]];
+			int inputsPerLayer = (i == 0) ? rawInputs : neuronsInLayer[i - 1];
+			for(int j = 0; j < neuronsInLayer[i]; j++){
+				layer[j] = new Neuron(inputsPerLayer);
+			}
+			layers.add(layer);
+		}
+		//displayWeights();
+	}
+	
+	public void generateTrainingData(){
 		//fill training data with random numbers
 		for(double[] tD : trainingData) {
 			tD[0] = random.nextInt(trainingMax);
@@ -51,17 +66,6 @@ public class NeuralNetwork {
 				trainingAnswers[i][j] = j == highestIndex? 1 : 0;
 			}
 		}
-		
-		//populate layers of neurons
-		for(int i = 0; i < neuronsInLayer.length; i++){
-			Neuron[] layer = new Neuron[neuronsInLayer[i]];
-			int inputsPerLayer = (i == 0) ? rawInputs : neuronsInLayer[i - 1];
-			for(int j = 0; j < neuronsInLayer[i]; j++){
-				layer[j] = new Neuron(inputsPerLayer);
-			}
-			layers.add(layer);
-		}
-		//displayWeights();
 	}
 	
 	public void run(double[] input){
