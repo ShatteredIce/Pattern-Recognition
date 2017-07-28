@@ -16,10 +16,11 @@ public class Main {
 	final int neighborMaxThreshold = 25;
 	final int squareSize = 5;
 	final int blockThresh = 22;
+	final int differentiator = 2;
 	
 	public Main(){
 		
-		BufferedImage test = loadImage("./res/raw/twoshapes.png");
+		BufferedImage test = loadImage("./res/raw/twoshapes.bmp");
 		//storeImage(highlightShape(findEdges(convertGrayscale(test)), test), "./res/processed/twoshapes.png");
 		//storeImage(findEdges(convertGrayscale(test)), "./res/processed/twoshapes_red.png");
 		ArrayList<BufferedImage> tests = cropToBlock(convertGrayscale(test));
@@ -550,12 +551,12 @@ public class Main {
 			}
 			//System.out.println("");
 		}
-		/*for(int[] o : numSim) {
+		for(int[] o : numSim) {
 			for(int x : o) {
 				System.out.print(x + " ");
 			}
 			System.out.println("");
-		}*/
+		}
 		System.out.println("done");
 		ArrayList<Integer> miXArray = new ArrayList<>();
 		ArrayList<Integer> miYArray = new ArrayList<>();
@@ -566,7 +567,12 @@ public class Main {
 				int current = numSim[i][j];
 				Boolean withinShape = false;
 				for(int k = 0; k < miXArray.size(); k ++) {
-					withinShape = (i < maXArray.get(k) && i > miXArray.get(k) && j < maYArray.get(k) && j > miYArray.get(k));
+					withinShape = (
+							i <= maXArray.get(k)
+							&& i >= miXArray.get(k) 
+							&& j <= maYArray.get(k) 
+							&& j >= miYArray.get(k)
+							);
 					 if(withinShape) {
 						 break;
 					 }
@@ -575,7 +581,7 @@ public class Main {
 					 continue;
 				 }
 				//System.out.println("Current is "+current);
-				if(current <= 20) {
+				if(current < blockThresh - differentiator) {
 					ArrayList<int[]> edges = new ArrayList<>();
 					ArrayList<int[]> tested = new ArrayList<>();
 					System.out.println("Testing "+i+","+j);
@@ -591,13 +597,18 @@ public class Main {
 					int minY = Collections.min(ys);
 					int maxY = Collections.max(ys);
 					//System.out.println("Finished Checking "+i+","+j);
-					System.out.println(minX+","+minY+","+maxX+","+maxY);
-					maXArray.add(maxX);
-					miXArray.add(minX);
-					maYArray.add(maxY);
-					miYArray.add(minY);
-					int rectx = minX-10 >= 0 ? minX-10 : 0, recty = minY-10 >= 0 ? minY-10 : 0, rectX = maxX-minX+10 < numSim.length - 1? maxX-minX+10 : numSim.length - 1, rectY = maxY-minY+10 < numSim.length - 1? maxY-minY+10 : numSim.length - 1;
-					out.add(input.getSubimage(recty,rectx,rectY,rectX));
+					if(!(minX == maxX && minY==maxY)) {
+						System.out.println(minX+","+minY+","+maxX+","+maxY);
+						maXArray.add(maxX);
+						miXArray.add(minX);
+						maYArray.add(maxY);
+						miYArray.add(minY);
+						int rectx = minX-10 >= 0 ? minX-10 : 0, 
+								recty = minY-10 >= 0 ? minY-10 : 0, 
+										rectX = maxX-minX+10 < numSim.length - 1? maxX-minX+10 : numSim.length - 1, 
+												rectY = maxY-minY+10 < numSim.length - 1? maxY-minY+10 : numSim.length - 1;
+						out.add(input.getSubimage(recty,rectx,rectY,rectX));
+					}
 				}
 			}
 		}
