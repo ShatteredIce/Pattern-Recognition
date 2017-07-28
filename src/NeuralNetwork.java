@@ -4,8 +4,8 @@ import java.util.Random;
 public class NeuralNetwork {
 	
 	final Random random = new Random();
-	final int rawInputs = 3;
-	int[] neuronsInLayer = {4, 3};
+	final int rawInputs = 2;
+	int[] neuronsInLayer = {8, 4};
 	ArrayList<Neuron[]> layers = new ArrayList<>();
 	final int trainingSetSize = 100;
 	final int trainingMax = 100;
@@ -13,15 +13,17 @@ public class NeuralNetwork {
 			//{2, 0, 1}, {4, 2, 5}, {2, 2, 2}, {8, 17, 7}, {-1, 19, 2}, {3, 1, 4}};
 	//double[][] trainingAnswers = {{1, 2, 3}, {1, 2, 3}, {0, 1, 6}, {5, 5, 7}, 
 			//{0, 1, 2}, {2, 4, 5}, {2, 2, 2}, {7, 8, 17}, {-1, 2, 19}, {1, 3, 4}};
-	double[][] trainingData = new double[trainingSetSize][3];
-	double[][] trainingAnswers = new double[trainingSetSize][3];
+	/*double[][] trainingData = new double[trainingSetSize][3];
+	double[][] trainingAnswers = new double[trainingSetSize][3];*/
+	double[][] trainingData = {{1,1},{3,2},{5,7},{1,0},{5,0},{4,4},{7,8},{3,7}};
+	double[][] trainingAnswers = {{0,0,1,0},{0,1,0,1},{1,1,0,0},{0,0,0,1},{0,1,0,1},{1,0,0,0},{1,1,1,1},{1,0,1,0}};
 
 //	double[][] trainingData = {{5, 0},{4,1},{0,3},{0,2},{1,2},{0,0}};
 //	double[][] trainingAnswers = {{1},{1},{0},{0},{1},{0}};
 	
 	public NeuralNetwork(){
 		//fill training data with random numbers
-		for(double[] tD : trainingData) {
+		/*for(double[] tD : trainingData) {
 			tD[0] = random.nextInt(trainingMax);
 			tD[1] = random.nextInt(trainingMax);
 			tD[2] = random.nextInt(trainingMax);
@@ -42,7 +44,7 @@ public class NeuralNetwork {
 			for(int j= 0; j < 3; j ++) {
 				trainingAnswers[i][j] = j == highestIndex? 1 : 0;
 			}
-		}
+		}*/
 		
 		//populate layers of neurons
 		for(int i = 0; i < neuronsInLayer.length; i++){
