@@ -15,6 +15,7 @@ public class NeuralNetwork {
 			//{0, 1, 2}, {2, 4, 5}, {2, 2, 2}, {7, 8, 17}, {-1, 2, 19}, {1, 3, 4}};
 	double[][] trainingData = new double[trainingSetSize][3];
 	double[][] trainingAnswers = new double[trainingSetSize][3];
+
 //	double[][] trainingData = {{5, 0},{4,1},{0,3},{0,2},{1,2},{0,0}};
 //	double[][] trainingAnswers = {{1},{1},{0},{0},{1},{0}};
 	
@@ -57,7 +58,7 @@ public class NeuralNetwork {
 	
 	public void run(double[] input){
 		calculate(input);
-		displayResult();
+		displayResult(true);
 	}
 	
 	public void train(int trainingIndex){
@@ -116,12 +117,18 @@ public class NeuralNetwork {
 		return layerOutput;
 	}
 	
-	public void displayResult(){
+	public void displayResult(boolean formatted){
 		int lastLayer = layers.size() - 1;
 		System.out.println("Last Layer Results: ");
+		if(formatted) System.out.println("(formatted output)");
 		for (int i = 0; i < layers.get(lastLayer).length; i++) {
 			Neuron n = layers.get(lastLayer)[i];
-			System.out.println("Neuron " + i + ": " + n.lastOutput);
+			if(formatted){
+				System.out.println("Neuron " + i + ": " + Math.round(n.lastOutput*1000000)/10000d);
+			}
+			else{
+				System.out.println("Neuron " + i + ": " + n.lastOutput);
+			}
 		}
 		System.out.println();
 	}

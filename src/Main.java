@@ -25,16 +25,16 @@ public class Main {
 		//storeImage(findEdges(convertGrayscale(test)), "./res/processed/intoutput.png");
 		String input = "input";
 		int iter = 0;
-		int trainingIndex = 0;
+		int trainingIndex = 13;
 		double[] data = new double[3];
 		
 		NeuralNetwork net = new NeuralNetwork();
-		while(iter <= 600000){
+		while(iter <= 400000){
 			net.train(trainingIndex);
 			if(iter % 100000 == 0){
 				System.out.println("ITERATION: " + iter);
 				net.displayWeights();
-				net.displayResult();
+				net.displayResult(false);
 			}
 			iter++;
 			trainingIndex++;
