@@ -15,9 +15,15 @@ public class Main {
 	private ArrayList<ArrayList<Integer>> slimeTrail = new ArrayList<ArrayList<Integer>>();
 	
 	public Main(){
-		String shapeName = "triangle1";
+		String shapeName = "star2";
 		BufferedImage test = loadImage("./res/raw/" + shapeName + ".png");
-		storeImage(highlightShape(findEdges((convertGrayscale(test))), test), "./res/processed/" + shapeName+ "_out.png");
+		storeImage(gaussianBlur(gaussianBlur(gaussianBlur(test))), "./res/processed/" + shapeName+ "_outTEST1.png");
+		storeImage(convertGrayscale(gaussianBlur(gaussianBlur(gaussianBlur(test)))), "./res/processed/" + shapeName+ "_outTEST2.png");
+		storeImage(highlightShape((findEdges(convertGrayscale(gaussianBlur(gaussianBlur(gaussianBlur(test)))))), test), "./res/processed/" + shapeName+ "_outTEST3.png");
+		storeImage(highlightShape(checkEdges(findEdges(convertGrayscale(gaussianBlur(gaussianBlur(gaussianBlur(test)))))), test), "./res/processed/" + shapeName+ "_outTEST4.png");
+		//storeImage(highlightShape(checkEdges(findEdges(convertGrayscale(gaussianBlur(gaussianBlur(gaussianBlur(test)))))), test), "./res/processed/" + shapeName+ "_outTEST.png");
+		//storeImage(highlightShape(checkEdges(gaussianBlur(gaussianBlur(gaussianBlur(findEdges((convertGrayscale(test))))))), test), "./res/processed/" + shapeName+ "_outTEST.png");
+		//storeImage(highlightShape(findEdges((convertGrayscale(test))), test), "./res/processed/" + shapeName+ "_out.png");
 		System.out.print("hello!");
 		BufferedImage shape = highlightShape(findEdges(convertGrayscale(test)), test);
 		ArrayList<ArrayList<Integer>> mine = findEndpoints((findEdges(convertGrayscale(test))));
@@ -43,7 +49,7 @@ public class Main {
 			}
 			System.out.println("X:" + temp.get(0) + " Y: " + temp.get(1));
 		}
-		storeImage(shape, "./res/processed/" + shapeName + "_out.png");
+		storeImage(shape, "./res/processed/" + shapeName + "_out2.png");
 		ArrayList<ArrayList<ArrayList<Integer>>> myList = new ArrayList<ArrayList<ArrayList<Integer>>>();
 		myList.add(mine);
 		
@@ -133,6 +139,57 @@ public class Main {
 		return convertedImage;
 	}
 	
+	private BufferedImage gaussianBlur(BufferedImage img) {
+		double sigma = 1;
+		int radius = 1;
+		int width = img.getWidth();
+		int height = img.getHeight();
+		BufferedImage convertedImage = new BufferedImage(width, height, img.getType());
+		for (int xpos = radius; xpos < width - radius; xpos++) {
+			for (int ypos = radius; ypos < height - radius; ypos++) {
+				double red = 0;
+				double blue = 0;
+				double green = 0;
+				double[][] weights = new double[2 * radius + 1][2 * radius + 1];
+				double sumWeights = 0;
+				Color[][] colors = new Color[2 * radius + 1][2 * radius + 1]; 
+				for (int i = xpos - radius; i <= xpos + radius; i++) {
+					for (int j = ypos - radius; j <= ypos + radius; j++) {
+						double weight = gaussian(i - xpos, j - ypos, sigma);
+						weights[i - xpos + radius][j - ypos + radius] = weight;
+						sumWeights += weight;
+						colors[i - xpos + radius][j - ypos + radius] = new Color(img.getRGB(i, j));
+					}
+				}
+				// set sum of all weights to 1
+				for (int i = 0; i < weights.length; i++) {
+					for (int j = 0; j < weights[0].length; j++) {
+						weights[i][j] /= sumWeights;
+					}
+				}
+				// get gaussian blur value of center point
+				for (int i = 0; i < weights.length; i++) {
+					for (int j = 0; j < weights[0].length; j++) {
+						red += weights[i][j] * colors[i][j].getRed();
+						green += weights[i][j] * colors[i][j].getGreen();
+						blue += weights[i][j] * colors[i][j].getBlue();
+					}
+				}
+				Color newColor = new Color((int) red, (int) green, (int) blue);
+				convertedImage.setRGB(xpos, ypos, newColor.getRGB());
+			}
+		}
+		return convertedImage;
+	}
+
+	
+	
+	private double gaussian(double x, double y, double sigma) {
+		return 1 / (2 * Math.PI * Math.pow(sigma, 2))* Math.exp(-(Math.pow(x, 2) + Math.pow(y, 2)) / 2 * Math.pow(sigma, 2));
+	}
+
+	
+
 	private BufferedImage findEdges(BufferedImage img){
 		int width = img.getWidth();
 		int height = img.getHeight();
@@ -172,6 +229,81 @@ public class Main {
 		}
 	}
 	
+	//ik bad form but...
+	private int connectedPixels = 0;
+	private ArrayList<ArrayList<Integer>> connectedPoints;
+	
+	private BufferedImage checkEdges(BufferedImage edges){
+		ArrayList<ArrayList<Integer>> thePoints = findAllPointsOnShapes(edges);
+		
+		BufferedImage modified;
+		int picWidth = edges.getWidth();
+		int picHeight = edges.getHeight();
+		modified = new BufferedImage(picWidth, picHeight, edges.getType());
+		for (int i = 0; i < picWidth; i +=1){
+			for (int k = 0; k < picHeight; k += 1){
+				modified.setRGB(i, k, edges.getRGB(i, k));
+			}
+		}
+		for (int k = 0; k < thePoints.size(); k += 1){
+			Color myColor = new Color(edges.getRGB(thePoints.get(k).get(0), thePoints.get(k).get(1)));
+			if (myColor.equals(Color.RED)){
+				ArrayList<Integer> eachPoint = thePoints.get(k);
+				connectedPoints = new ArrayList<ArrayList<Integer>>();
+				connectedPixels = 0;
+				connectedPoints.add(eachPoint);
+				checkEdgesHelper(eachPoint.get(0), eachPoint.get(1), modified, true);
+				for (int j = 0; j < connectedPoints.size(); j +=1){
+					modified.setRGB(connectedPoints.get(j).get(0), connectedPoints.get(j).get(1), Color.WHITE.getRGB());
+				}
+				if (connectedPixels < 80){ //how many are grouped to make work
+					for (int i = 0; i < connectedPoints.size(); i +=1){
+						edges.setRGB(connectedPoints.get(i).get(0), connectedPoints.get(i).get(1), Color.WHITE.getRGB());
+						//thePoints.remove(connectedPoints.get(i)); //this will take awhile
+					}
+				}
+			
+			}
+		}
+		return edges;
+	}
+	
+	private void checkEdgesHelper(int x, int y, BufferedImage edges, boolean first){ //recursive
+		//add to connectedPixels
+		//add to connectedPoints
+		BufferedImage modified;
+		if (first){
+			int picWidth = edges.getWidth();
+			int picHeight = edges.getHeight();
+			modified = new BufferedImage(picWidth, picHeight, edges.getType());
+			for (int i = 0; i < picWidth; i +=1){
+				for (int k = 0; k < picHeight; k += 1){
+					modified.setRGB(i, k, edges.getRGB(i, k));
+				}
+			}
+		}else{
+			modified = edges;
+		}
+		for (int i = (x - 1); i <= (x + 1); i +=1){
+			for (int k = (y - 1); k <= (y + 1); k += 1){
+				if (i>= 0 && k >= 0 && i < edges.getWidth() && k < edges.getHeight()){ //not off edge
+					if (!(i == x && k == y)){ //not currentpoint
+						Color myC = new Color(edges.getRGB(i, k));
+						if (myC.equals(Color.RED)){
+							connectedPixels += 1;
+							ArrayList<Integer> thePoint = new ArrayList<Integer>();
+							thePoint.add(i);
+							thePoint.add(k);
+							connectedPoints.add(thePoint);
+							modified.setRGB(i, k, Color.WHITE.getRGB());
+							checkEdgesHelper(i, k, modified, false);
+						}			
+					}
+				}			
+			}
+		}	
+	}
+				 
 	private BufferedImage highlightShape(BufferedImage blackLines, BufferedImage real){
 		BufferedImage highlight = real;
 		int picWidth = highlight.getWidth();
@@ -475,12 +607,12 @@ public class Main {
 		return next;
 	}
 	
-	private ArrayList findAllPointsOnShapes(BufferedImage blackLines){
+	private ArrayList<ArrayList<Integer>> findAllPointsOnShapes(BufferedImage blackLines){
 		
 		int picWidth = blackLines.getWidth();
 		int picHeight = blackLines.getHeight();
 		Color red = Color.RED;
-		ArrayList<ArrayList> listAll = new ArrayList<ArrayList>();
+		ArrayList<ArrayList<Integer>> listAll = new ArrayList<ArrayList<Integer>>();
 		for (int counterY = 0; counterY < (picHeight) ; counterY += 1){
     		for (int counterX = 0; counterX < (picWidth) ; counterX += 1){
     			int originalColor;
