@@ -215,13 +215,14 @@ public class Main {
 			double avg = sum / angles.length;
 			double sqDiffSum = 0;
 			for (double angle: angles) {
+				System.out.println("angle: "+angle);
 				sqDiffSum += (avg - angle) * (avg - angle);
 			}
 			double r  = (maxX - minX)/(maxY - minY);
 			double sqDiffMean = sqDiffSum / angles.length; 
 			double std = Math.sqrt(sqDiffMean);
-			outArray[i][0] = r;
-			outArray[i][1] = (double)shape.size();
+			outArray[i][1] = r;
+			outArray[i][0] = (double)shape.size();
 			outArray[i][2] = std;
 			i ++;
 		}
