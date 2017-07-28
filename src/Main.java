@@ -15,11 +15,12 @@ public class Main {
 	private ArrayList<ArrayList<Integer>> slimeTrail = new ArrayList<ArrayList<Integer>>();
 	
 	public Main(){
-		BufferedImage test = loadImage("./res/raw/star.png");
-		storeImage(highlightShape(findEdges((convertGrayscale(test))), test), "./res/processed/star_out.png");
+		String shapeName = "triangle1";
+		BufferedImage test = loadImage("./res/raw/" + shapeName + ".png");
+		storeImage(highlightShape(findEdges((convertGrayscale(test))), test), "./res/processed/" + shapeName+ "_out.png");
 		System.out.print("hello!");
 		BufferedImage shape = highlightShape(findEdges(convertGrayscale(test)), test);
-		ArrayList<ArrayList> mine = findEndpoints((findEdges(convertGrayscale(test))));
+		ArrayList<ArrayList<Integer>> mine = findEndpoints((findEdges(convertGrayscale(test))));
 		System.out.println("the list size is: " + mine.size());
 		
 		
@@ -42,7 +43,16 @@ public class Main {
 			}
 			System.out.println("X:" + temp.get(0) + " Y: " + temp.get(1));
 		}
-		storeImage(shape, "./res/processed/star_out.png");
+		storeImage(shape, "./res/processed/" + shapeName + "_out.png");
+		ArrayList<ArrayList<ArrayList<Integer>>> myList = new ArrayList<ArrayList<ArrayList<Integer>>>();
+		myList.add(mine);
+		
+		Double[][] my = processShape(myList);
+		for (Double[] value: my){
+			for (Double actualValue : value){
+				System.out.println(actualValue);
+			}
+		}
 		System.out.print("done!");
 		 
 		//storeImage(findEdges(convertGrayscale(test)), "./res/output.png");
@@ -181,46 +191,51 @@ public class Main {
 		return highlight;
 		
 	}
+
 	private Double[][] processShape(ArrayList<ArrayList<ArrayList<Integer>>> inArray) {
 		int len = inArray.size();
 		int i = 0;
 		Double[][] outArray = new Double[len][3];
-		/// Identify: ratio of max-width:max-height, number of points, std from average angle
+		/// Identify: ratio of max-width:max-height, number of points, std from
+		/// average angle
 		for (ArrayList<ArrayList<Integer>> shape : inArray) {
-			double minX = (double)shape.get(0).get(0), minY = (double)shape.get(0).get(1), maxX = (double)shape.get(0).get(1), maxY = (double)shape.get(0).get(1);
+			double minX = (double) shape.get(0).get(0), minY = (double) shape.get(0).get(1),
+					maxX = (double) shape.get(0).get(1), maxY = (double) shape.get(0).get(1);
 			Double[] angles = new Double[shape.size()];
 			double sum = 0;
 			int j = 0;
 			for (ArrayList<Integer> points : shape) {
-				double x = (double)points.get(0);
-				double y = (double)points.get(1);
-				double x1 = (double)shape.get(j+1).get(0);
-				double x2 = (double)shape.get(j-1).get(0);
-				double y1 = (double)shape.get(j+1).get(1);
-				double y2 = (double)shape.get(j-1).get(1);
-				minX = x < minX? x : minX;
-				minY = y < minY? y : minY;
-				maxX = x > maxX? x : maxX;
-				maxY = y > maxY? y : maxY;
-				angles[j] = Math.PI - (Math.atan(Math.abs(y2-y)/Math.abs(x2-x))+Math.atan(Math.abs(y1-y)/Math.abs(x1-x)));
+				double x = (double) points.get(0);
+				double y = (double) points.get(1);
+				double x1 = (double) shape.get(j == shape.size() - 1 ? 0 : j + 1).get(0);
+				double x2 = (double) shape.get(j == 0 ? shape.size() - 1 : j - 1).get(0);
+				double y1 = (double) shape.get(j == shape.size() - 1 ? 0 : j + 1).get(1);
+				double y2 = (double) shape.get(j == 0 ? shape.size() - 1 : j - 1).get(1);
+				minX = x < minX ? x : minX;
+				minY = y < minY ? y : minY;
+				maxX = x > maxX ? x : maxX;
+				maxY = y > maxY ? y : maxY;
+				angles[j] = Math.PI - (Math.atan(Math.abs(y2 - y) / Math.abs(x2 - x))
+						+ Math.atan(Math.abs(y1 - y) / Math.abs(x1 - x)));
 				sum += angles[j];
-				j ++;
+				j++;
 			}
 			double avg = sum / angles.length;
 			double sqDiffSum = 0;
-			for (double angle: angles) {
+			for (double angle : angles) {
 				sqDiffSum += (avg - angle) * (avg - angle);
 			}
-			double r  = (maxX - minX)/(maxY - minY);
-			double sqDiffMean = sqDiffSum / angles.length; 
+			double r = (maxX - minX) / (maxY - minY);
+			double sqDiffMean = sqDiffSum / angles.length;
 			double std = Math.sqrt(sqDiffMean);
 			outArray[i][0] = r;
-			outArray[i][1] = (double)shape.size();
+			outArray[i][1] = (double) shape.size();
 			outArray[i][2] = std;
-			i ++;
+			i++;
 		}
-		return outArray;		
+		return outArray;
 	}
+	
 	
 	private ArrayList findEndpoints(BufferedImage blackLines){
 		//passing him an array list of shapes (arraylists) of points (arraylists)
@@ -257,6 +272,7 @@ public class Main {
 			
 			ArrayList<ArrayList<Integer>> thePoints = tryToFindEndHelp(firstPoint, blackLines, 0.0, new LinkedList<ArrayList<Double>>(), true, new ArrayList<ArrayList<Integer>>(), firstPoint, -1);
 			System.out.println("thePoints size is: " + thePoints.size());
+			thePoints = endPointPreciser(thePoints, blackLines);
 			return thePoints;
 		}
 		
@@ -272,8 +288,14 @@ public class Main {
 		int y = currentCoord.get(1);
 		int nextX = -1;
 		int nextY = -1;
-		int maxListNumber = 50; //change this to change sensitivity THIS MUST BE ODD (i think?)
+		
+		int maxListNumber = findAllPointsOnShapes(blackLines).size()/80; 
+		if (maxListNumber < 50){
+			maxListNumber = 50;
+		}
+		//System.out.println("how many pixels" + findAllPointsOnShapes(blackLines).size()/80);
 		ArrayList<ArrayList<Integer>> returnME = new ArrayList<ArrayList<Integer>>();
+		 
 		int dir = -1;
 
 		if (x != 0){ //not on left edge
@@ -340,6 +362,9 @@ public class Main {
 			}
 		}if (first == false && firstPoint.get(0) == nextX && firstPoint.get(1)== nextY){ //made it to the begginning and is not the first time around
 			System.out.println("i made it to my base case");
+			if (history.size() == maxListNumber){
+				masterList.add(firstPoint);
+			}
 			return masterList; // this is my base case
 			
 		}else if (nextX >= 0){ //means has been changed, since coords are not negative
@@ -478,9 +503,26 @@ public class Main {
 		for (int i = 0; i < endPoints.size(); i += 1){
 			ArrayList<Integer> temporaryX = new ArrayList<Integer>();
 			ArrayList<Integer> temporaryY = new ArrayList<Integer>();
-			//need to add in a way to make sure not on edge
-			for (int j = -4; j < 5; j+=1){
-				for (int k = -4; k < 5; k +=1){
+			
+			int scale = Math.abs(5); 
+			
+			//checking for edges
+			boolean outOfRange = true;
+			while (outOfRange){
+				if (endPoints.get(i).get(0) + scale < blackLines.getWidth()){
+					if (endPoints.get(i).get(1) + scale < blackLines.getHeight()){
+						if (endPoints.get(i).get(0) - scale > 0 ){
+							if (endPoints.get(i).get(1) - scale > 0){
+								outOfRange = false;
+								break;
+							}
+						}
+					}
+				}
+				scale -= 1;
+			}
+			for (int j = -scale; j < scale; j+=1){
+				for (int k = -scale; k < scale; k +=1){
 					int originalColor;
 	    			originalColor = blackLines.getRGB(endPoints.get(i).get(0) + j, endPoints.get(i).get(1) + k);
 	        		Color myColor = new Color(originalColor);
