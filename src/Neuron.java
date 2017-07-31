@@ -6,7 +6,7 @@ public class Neuron {
 	static Random random = new Random();
 	
 	int numInputs;
-	final double rate = 0.01;
+	final double rate = 0.001;
 	
 	double[] inputs;
 	double[] weights;

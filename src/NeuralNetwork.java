@@ -5,7 +5,7 @@ public class NeuralNetwork {
 	
 	final Random random = new Random();
 	final int rawInputs = 3;
-	int[] neuronsInLayer = {4, 3};
+	int[] neuronsInLayer = {4, 4, 3};
 	ArrayList<Neuron[]> layers = new ArrayList<>();
 	
 	double[][] trainingData = {{5, 1, 1}, {7, 6, 1}, {3, 0, 2}, {5, 7, 5},
@@ -105,8 +105,8 @@ public class NeuralNetwork {
 					totalContribution += layerContribution[j][i];
 				}
 				lastLayerContribution[i] = n.updateWeights(totalContribution);
-				backpropagate(currentLayer-1, lastLayerContribution);
 			}
+			backpropagate(currentLayer-1, lastLayerContribution);
 		}
 		
 	}
