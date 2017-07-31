@@ -3,30 +3,45 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.ArrayList;
+
 import java.util.LinkedList;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Random;
+import java.util.Scanner;
+
 
 import javax.imageio.ImageIO;
 
 public class Main {
 	
+	Random random = new Random();
+	
 	final int colorThreshold = 5;
 	final int neighborMinThreshold = 5; //five or less or stack overflow 
 	final int neighborMaxThreshold = 25;
+
 	private ArrayList<ArrayList<Integer>> slimeTrail = new ArrayList<ArrayList<Integer>>();
 	
 	public Main(){
-		String shapeName = "star2";
+		//problem with real vs fake...
+		String shapeName = "triangle3";
 		BufferedImage test = loadImage("./res/raw/" + shapeName + ".png");
 		storeImage(gaussianBlur(gaussianBlur(gaussianBlur(test))), "./res/processed/" + shapeName+ "_outTEST1.png");
 		storeImage(convertGrayscale(gaussianBlur(gaussianBlur(gaussianBlur(test)))), "./res/processed/" + shapeName+ "_outTEST2.png");
 		storeImage(highlightShape((findEdges(convertGrayscale(gaussianBlur(gaussianBlur(gaussianBlur(test)))))), test), "./res/processed/" + shapeName+ "_outTEST3.png");
+		System.out.println("hi");
+		
+		storeImage(findEdges(convertGrayscale(test)), "./res/processed/" + shapeName+ "_outTEST6.png");
 		storeImage(highlightShape(checkEdges(findEdges(convertGrayscale(gaussianBlur(gaussianBlur(gaussianBlur(test)))))), test), "./res/processed/" + shapeName+ "_outTEST4.png");
+		storeImage(checkEdges(findEdges(convertGrayscale(gaussianBlur(gaussianBlur(gaussianBlur(test)))))), "./res/processed/" + shapeName+ "_outTEST5.png");
 		//storeImage(highlightShape(checkEdges(findEdges(convertGrayscale(gaussianBlur(gaussianBlur(gaussianBlur(test)))))), test), "./res/processed/" + shapeName+ "_outTEST.png");
 		//storeImage(highlightShape(checkEdges(gaussianBlur(gaussianBlur(gaussianBlur(findEdges((convertGrayscale(test))))))), test), "./res/processed/" + shapeName+ "_outTEST.png");
 		//storeImage(highlightShape(findEdges((convertGrayscale(test))), test), "./res/processed/" + shapeName+ "_out.png");
 		System.out.print("hello!");
 		BufferedImage shape = highlightShape(findEdges(convertGrayscale(test)), test);
-		ArrayList<ArrayList<Integer>> mine = findEndpoints((findEdges(convertGrayscale(test))));
+		ArrayList<ArrayList<Integer>> mine = findEndpoints(checkEdges(findEdges((test))));
 		System.out.println("the list size is: " + mine.size());
 		
 		
@@ -53,15 +68,18 @@ public class Main {
 		ArrayList<ArrayList<ArrayList<Integer>>> myList = new ArrayList<ArrayList<ArrayList<Integer>>>();
 		myList.add(mine);
 		
-		Double[][] my = processShape(myList);
+		/*Double[][] my = processShape(myList);
 		for (Double[] value: my){
 			for (Double actualValue : value){
 				System.out.println(actualValue);
 			}
 		}
+		*/
 		System.out.print("done!");
+		
 		 
 		//storeImage(findEdges(convertGrayscale(test)), "./res/output.png");
+
 	}
 
 	public static void main(String[] args) {
@@ -139,40 +157,59 @@ public class Main {
 		return convertedImage;
 	}
 	
-	private BufferedImage gaussianBlur(BufferedImage img) {
+
+	private BufferedImage gaussianBlur(BufferedImage img){
 		double sigma = 1;
 		int radius = 1;
 		int width = img.getWidth();
 		int height = img.getHeight();
-		BufferedImage convertedImage = new BufferedImage(width, height, img.getType());
-		for (int xpos = radius; xpos < width - radius; xpos++) {
-			for (int ypos = radius; ypos < height - radius; ypos++) {
+
+		BufferedImage convertedImage = new BufferedImage(width, height, img.getType()); 
+		for (int y = 0; y < height; y++) {
+			for (int x = 0; x < radius; x++) {
+				convertedImage.setRGB(x, y, img.getRGB(x, y));
+			}
+			for (int x = width - radius; x < width; x++) {
+				convertedImage.setRGB(x, y, img.getRGB(x, y));
+			}
+		}
+		for (int x = radius; x < width - radius; x++) {
+			for (int y = 0; y < radius; y++) {
+				convertedImage.setRGB(x, y, img.getRGB(x, y));
+			}
+			for (int y = height - radius; y < height; y++) {
+				convertedImage.setRGB(x, y, img.getRGB(x, y));
+			}
+		}
+		for(int xpos = radius; xpos < width - radius; xpos++){
+			for(int ypos = radius; ypos < height - radius; ypos++){
 				double red = 0;
 				double blue = 0;
 				double green = 0;
-				double[][] weights = new double[2 * radius + 1][2 * radius + 1];
+				double[][] weights = new double[2*radius + 1][2* radius + 1];
 				double sumWeights = 0;
-				Color[][] colors = new Color[2 * radius + 1][2 * radius + 1]; 
-				for (int i = xpos - radius; i <= xpos + radius; i++) {
-					for (int j = ypos - radius; j <= ypos + radius; j++) {
+				Color[][] colors = new Color[2*radius + 1][2* radius + 1];
+				//find color and weight for the 3 * 3 box surrounding target pixel
+				for(int i = xpos - radius; i <= xpos + radius; i++){
+					for(int j = ypos - radius; j <= ypos + radius; j++){
 						double weight = gaussian(i - xpos, j - ypos, sigma);
 						weights[i - xpos + radius][j - ypos + radius] = weight;
 						sumWeights += weight;
 						colors[i - xpos + radius][j - ypos + radius] = new Color(img.getRGB(i, j));
 					}
 				}
-				// set sum of all weights to 1
+				//set sum of all weights to 1
 				for (int i = 0; i < weights.length; i++) {
 					for (int j = 0; j < weights[0].length; j++) {
-						weights[i][j] /= sumWeights;
+						weights[i][j]  /= sumWeights;
 					}
 				}
-				// get gaussian blur value of center point
+				//get gaussian blur value of center point
 				for (int i = 0; i < weights.length; i++) {
 					for (int j = 0; j < weights[0].length; j++) {
-						red += weights[i][j] * colors[i][j].getRed();
-						green += weights[i][j] * colors[i][j].getGreen();
-						blue += weights[i][j] * colors[i][j].getBlue();
+						red +=  weights[i][j] * colors[i][j].getRed();
+						green +=  weights[i][j] * colors[i][j].getGreen();
+						blue +=  weights[i][j] * colors[i][j].getBlue();
 					}
 				}
 				Color newColor = new Color((int) red, (int) green, (int) blue);
@@ -183,11 +220,9 @@ public class Main {
 	}
 
 	
-	
-	private double gaussian(double x, double y, double sigma) {
-		return 1 / (2 * Math.PI * Math.pow(sigma, 2))* Math.exp(-(Math.pow(x, 2) + Math.pow(y, 2)) / 2 * Math.pow(sigma, 2));
+	private double gaussian(double x, double y, double sigma){
+		return 1/(2*Math.PI*Math.pow(sigma, 2))*Math.exp(-(Math.pow(x, 2) + Math.pow(y, 2))/ 2*Math.pow(sigma, 2));
 	}
-
 	
 
 	private BufferedImage findEdges(BufferedImage img){
@@ -245,27 +280,48 @@ public class Main {
 				modified.setRGB(i, k, edges.getRGB(i, k));
 			}
 		}
+		ArrayList<ArrayList<ArrayList<Integer>>> theBlobs = new ArrayList<ArrayList<ArrayList<Integer>>>();
 		for (int k = 0; k < thePoints.size(); k += 1){
-			Color myColor = new Color(edges.getRGB(thePoints.get(k).get(0), thePoints.get(k).get(1)));
+			Color myColor = new Color(modified.getRGB(thePoints.get(k).get(0), thePoints.get(k).get(1)));
 			if (myColor.equals(Color.RED)){
 				ArrayList<Integer> eachPoint = thePoints.get(k);
 				connectedPoints = new ArrayList<ArrayList<Integer>>();
-				connectedPixels = 0;
+				connectedPixels = 1;
 				connectedPoints.add(eachPoint);
 				checkEdgesHelper(eachPoint.get(0), eachPoint.get(1), modified, true);
 				for (int j = 0; j < connectedPoints.size(); j +=1){
 					modified.setRGB(connectedPoints.get(j).get(0), connectedPoints.get(j).get(1), Color.WHITE.getRGB());
 				}
-				if (connectedPixels < 80){ //how many are grouped to make work
-					for (int i = 0; i < connectedPoints.size(); i +=1){
-						edges.setRGB(connectedPoints.get(i).get(0), connectedPoints.get(i).get(1), Color.WHITE.getRGB());
-						//thePoints.remove(connectedPoints.get(i)); //this will take awhile
-					}
-				}
-			
+				theBlobs.add(connectedPoints);
 			}
 		}
-		return edges;
+		if (theBlobs.size() > 0){
+			int currentBig = 0;
+			int bigIndex = -1;
+			for (int i = 0; i < theBlobs.size(); i += 1){ //finds the biggest blob
+				if (theBlobs.get(i).size() > currentBig){
+					
+					currentBig = (int)theBlobs.get(i).size();
+					bigIndex = i;
+				}
+			}
+	
+			BufferedImage returnME = new BufferedImage(picWidth, picHeight, edges.getType());
+			for (int i = 0; i < picWidth; i +=1){ //sets all pixels to white
+				for (int k = 0; k < picHeight; k += 1){
+					returnME.setRGB(i, k, Color.WHITE.getRGB());
+				}
+			}
+			for (int k = 0; k < theBlobs.get(bigIndex).size(); k+=1 ){ //sets selected pixels to red
+				int x = theBlobs.get(bigIndex).get(k).get(0);
+				int y = theBlobs.get(bigIndex).get(k).get(1);
+				returnME.setRGB(x, y, Color.RED.getRGB());
+			}
+			System.out.println("about to return");
+			return returnME;
+		}
+		
+		return edges; //not what i want to return i think
 	}
 	
 	private void checkEdgesHelper(int x, int y, BufferedImage edges, boolean first){ //recursive
@@ -305,9 +361,15 @@ public class Main {
 	}
 				 
 	private BufferedImage highlightShape(BufferedImage blackLines, BufferedImage real){
-		BufferedImage highlight = real;
+		BufferedImage highlight = new BufferedImage(real.getWidth(), real.getHeight(), real.getType());
 		int picWidth = highlight.getWidth();
 		int picHeight = highlight.getHeight();
+		
+		for (int i = 0; i < picWidth; i +=1){
+			for (int k = 0; k < picHeight; k += 1){
+				highlight.setRGB(i, k, real.getRGB(i, k));
+			}
+		}
 		Color red = Color.RED;
 		Color trace = Color.CYAN;
 		for (int counterX = 0; counterX < (picWidth) ; counterX += 1){
@@ -321,7 +383,6 @@ public class Main {
     		}
 		}
 		return highlight;
-		
 	}
 
 	private Double[][] processShape(ArrayList<ArrayList<ArrayList<Integer>>> inArray) {
