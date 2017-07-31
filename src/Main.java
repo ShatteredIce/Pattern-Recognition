@@ -26,11 +26,11 @@ public class Main {
 	
 	public Main(){
 		//problem with real vs fake...
-		String shapeName = "triangle3";
-		BufferedImage test = loadImage("./res/raw/" + shapeName + ".png");
-		storeImage(gaussianBlur(gaussianBlur(gaussianBlur(test))), "./res/processed/" + shapeName+ "_outTEST1.png");
-		storeImage(convertGrayscale(gaussianBlur(gaussianBlur(gaussianBlur(test)))), "./res/processed/" + shapeName+ "_outTEST2.png");
-		storeImage(highlightShape((findEdges(convertGrayscale(gaussianBlur(gaussianBlur(gaussianBlur(test)))))), test), "./res/processed/" + shapeName+ "_outTEST3.png");
+		String shapeName = "square";
+		String type = "png";
+		
+		BufferedImage test = loadImage("./res/raw/" + shapeName + "." + type);
+		System.out.print("it is real: " + realORfake(test));
 		System.out.println("hi");
 		
 		storeImage(findEdges(convertGrayscale(test)), "./res/processed/" + shapeName+ "_outTEST6.png");
@@ -295,6 +295,9 @@ public class Main {
 				theBlobs.add(connectedPoints);
 			}
 		}
+		if (theBlobs.size() > 5){
+			real = true;
+		}
 		if (theBlobs.size() > 0){
 			int currentBig = 0;
 			int bigIndex = -1;
@@ -359,7 +362,13 @@ public class Main {
 			}
 		}	
 	}
-				 
+	
+	private boolean real;
+	private boolean realORfake(BufferedImage pic){
+		real = false;
+		checkEdges(findEdges(convertGrayscale(pic)));
+		return real;
+	}
 	private BufferedImage highlightShape(BufferedImage blackLines, BufferedImage real){
 		BufferedImage highlight = new BufferedImage(real.getWidth(), real.getHeight(), real.getType());
 		int picWidth = highlight.getWidth();
