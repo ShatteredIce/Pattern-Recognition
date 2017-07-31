@@ -26,10 +26,10 @@ public class Main {
 		String input = "input";
 		int iter = 0;
 		int trainingIndex = 0;
-		double[] data = new double[2];
-		
 		NeuralNetwork net = new NeuralNetwork();
-		while(iter <= 1000000){
+		double[] data = new double[net.getNumInputs()];
+		
+		while(iter <= 10000000){
 			net.train(trainingIndex);
 			if(iter % 100000 == 0){
 				System.out.println("ITERATION: " + iter);
@@ -196,3 +196,4 @@ public class Main {
 	}
 		
 }
+>>>>>>> shatteredice-dev
