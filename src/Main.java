@@ -25,11 +25,11 @@ public class Main {
 		//storeImage(findEdges(convertGrayscale(test)), "./res/processed/intoutput.png");
 		String input = "input";
 		int iter = 0;
-		int trainingIndex = 13;
-		double[] data = new double[3];
+		int trainingIndex = 0;
+		double[] data = new double[2];
 		
 		NeuralNetwork net = new NeuralNetwork();
-		while(iter <= 800000){
+		while(iter <= 1000000){
 			net.train(trainingIndex);
 			if(iter % 100000 == 0){
 				System.out.println("ITERATION: " + iter);
