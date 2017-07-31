@@ -24,8 +24,8 @@ public class Main {
 	private ArrayList<ArrayList<Integer>> slimeTrail = new ArrayList<ArrayList<Integer>>();
 	
 	public Main(){
-		String shapeName = "twoshapes";
-		BufferedImage best = loadImage("./res/raw/" + shapeName + ".bmp");
+		String shapeName = "triangle4";
+		BufferedImage best = loadImage("./res/raw/" + shapeName + ".png");
 		ArrayList<BufferedImage> tests = cropToBlock(convertGrayscale(best));
 //		BufferedImage test = convertGrayscale(best);
 		int index = -1;
@@ -624,7 +624,7 @@ public class Main {
 			System.out.println("has been tested");
 		}*/
 		Iteration ++;
-		//System.out.println("Iteration"+Iteration);
+		System.out.println("Iteration "+Iteration);
 		if(!ALContainsArray(testedArray,CurrentPoint)) {
 			System.out.println("Testing ("+StartX+","+StartY+")"+" which is: "+SimilarityArray[StartX][StartY]);
 			testedArray.add(CurrentPoint);
