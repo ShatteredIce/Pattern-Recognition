@@ -24,18 +24,18 @@ public class Main {
 	private ArrayList<ArrayList<Integer>> slimeTrail = new ArrayList<ArrayList<Integer>>();
 	
 	public Main(){
-		String shapeName = "triangle2";
-		BufferedImage best = loadImage("./res/raw/" + shapeName + ".png");
-//		ArrayList<BufferedImage> tests = cropToBlock(convertGrayscale(best));
-		BufferedImage test = convertGrayscale(best);
-//		int index = -1;
-//		for(BufferedImage test : tests) {
-//			index ++;
+		String shapeName = "twoshapes";
+		BufferedImage best = loadImage("./res/raw/" + shapeName + ".bmp");
+		ArrayList<BufferedImage> tests = cropToBlock(convertGrayscale(best));
+//		BufferedImage test = convertGrayscale(best);
+		int index = -1;
+		for(BufferedImage test : tests) {
+			index ++;
 			storeImage(highlightShape(findEdges(test),test), "./res/processed/" + shapeName + "_out.png");
 			System.out.print("finished storeImage 1");
 			BufferedImage shape = highlightShape(findEdges((test)), test);
 			System.out.println("finished highlighting shape");
-			ArrayList<ArrayList<Integer>> mine = findEndpoints((findEdges((test))));
+			ArrayList<ArrayList<Integer>> mine = findEndpoints(findEdges(test));
 			System.out.println("the list size is: " + mine.size());
 			
 			
@@ -56,7 +56,7 @@ public class Main {
 					}
 				}
 				System.out.println("X:" + temp.get(0) + " Y: " + temp.get(1));
-			//}
+			}
 			storeImage(shape, "./res/processed/" + shapeName + "_out.png");
 			ArrayList<ArrayList<ArrayList<Integer>>> myList = new ArrayList<ArrayList<ArrayList<Integer>>>();
 			myList.add(mine);
@@ -210,7 +210,7 @@ public class Main {
 	private Double[][] processShape(ArrayList<ArrayList<ArrayList<Integer>>> inArray) {
 		int len = inArray.size();
 		int i = 0;
-		Double[][] outArray = new Double[len][3];
+		Double[][] outArray = new Double[len][4];
 		/// Identify: ratio of max-width:max-height, number of points, std from
 		/// average angle
 		for (ArrayList<ArrayList<Integer>> shape : inArray) {
@@ -254,6 +254,7 @@ public class Main {
 			outArray[i][0] = (double) shape.size();
 			outArray[i][1] = r;
 			outArray[i][2] = std;
+			outArray[i][3] = avg;
 			i++;
 		}
 		return outArray;
@@ -522,34 +523,41 @@ public class Main {
 	}
 	private ArrayList<BufferedImage> cropToBlock(BufferedImage input) {
 		ArrayList<BufferedImage> out = new ArrayList<BufferedImage>();
-		List<int[]> blocks = new ArrayList<>();
 		int[][] numSim = new int[input.getHeight()][input.getWidth()];
-		int numBlocks = 0;
-		for(int x = 2; x < input.getWidth() - 2; x ++ ) {
-			for(int y = 2; y < input.getHeight() - 2; y ++) {
-				int numSimilar = 25;
+		for(int x = 0; x < input.getWidth() - 0; x ++ ) {
+			for(int y = 0; y < input.getHeight() - 0; y ++) {
+				int numSimilar = 0;
+				int total = 0;
 				for(int i = -2; i < 3; i ++) {
 					Color thisColor = new Color(input.getRGB(x, y));
 					//System.out.println("Checking x:"+(x+i));
 					for (int j = -2; j < 3; j ++) {
-						//System.out.println("Checking y:"+(y+j));
-						Color thatColor = new Color(input.getRGB(x + i, y + j));
-						if(checkSimilarity(thisColor,thatColor)){
-							numSimilar --;
+						try {
+							//System.out.println("Checking y:"+(y+j));
+							Color thatColor = new Color(input.getRGB(x + i, y + j));
+							if(checkSimilarity(thisColor,thatColor)){
+								numSimilar ++;
+							}
+							total ++;
+						} catch(Exception e) {
+							
 						}
 					}
 				}
-				numSim[y][x] = numSimilar;
+				if(total != 25) {
+					numSimilar = (int)(25*(((double)numSimilar)/total));
+				}
+				numSim[y][x] = 25 - numSimilar;
 				//System.out.print(numSimilar+",");
 			}
 			//System.out.println("");
 		}
-//		for(int[] o : numSim) {
-//			for(int x : o) {
-//				System.out.print(x + " ");
-//			}
-//			System.out.println("");
-//		}
+		for(int[] o : numSim) {
+			for(int x : o) {
+				System.out.print(x + " ");
+			}
+			System.out.println("");
+		}
 		ArrayList<Integer> miXArray = new ArrayList<>();
 		ArrayList<Integer> miYArray = new ArrayList<>();
 		ArrayList<Integer> maXArray = new ArrayList<>();
@@ -577,7 +585,7 @@ public class Main {
 				if(current < blockThresh - differentiator) {
 					ArrayList<int[]> edges = new ArrayList<>();
 					
-					//System.out.println("Testing "+i+","+j);
+					System.out.println("Testing "+i+","+j);
 					edges = tailCheck4(numSim,i,j,edges,tested,0);
 					ArrayList<Integer> xs = new ArrayList<>();
 					ArrayList<Integer> ys = new ArrayList<>();
@@ -618,29 +626,38 @@ public class Main {
 		Iteration ++;
 		//System.out.println("Iteration"+Iteration);
 		if(!ALContainsArray(testedArray,CurrentPoint)) {
-			//System.out.println("Testing ("+StartX+","+StartY+")"+" which is: "+SimilarityArray[StartX][StartY]);
+			System.out.println("Testing ("+StartX+","+StartY+")"+" which is: "+SimilarityArray[StartX][StartY]);
 			testedArray.add(CurrentPoint);
-			if(SimilarityArray[StartX+1][StartY] > blockThresh) {
-				edgeArray = tailCheck4(SimilarityArray,StartX+1,StartY,edgeArray,testedArray, Iteration);
-			} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
-				edgeArray.add(CurrentPoint);
-			}
-			if(SimilarityArray[StartX][StartY+1] > blockThresh) {
-				edgeArray = tailCheck4(SimilarityArray,StartX,StartY+1,edgeArray,testedArray, Iteration);
-			} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
-				edgeArray.add(CurrentPoint);
-			}
-			if(SimilarityArray[StartX-1][StartY] > blockThresh) {
-				edgeArray = tailCheck4(SimilarityArray,StartX-1,StartY,edgeArray,testedArray, Iteration);
-			} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
-				edgeArray.add(CurrentPoint);
-			}
-			if(SimilarityArray[StartX][StartY-1] > blockThresh) {
-				edgeArray = tailCheck4(SimilarityArray,StartX,StartY-1,edgeArray,testedArray, Iteration);
-			} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
-				edgeArray.add(CurrentPoint);
-			}
+			try {
+				if(SimilarityArray[StartX+1][StartY] > blockThresh) {
+					edgeArray = tailCheck4(SimilarityArray,StartX+1,StartY,edgeArray,testedArray, Iteration);
+				} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
+					edgeArray.add(CurrentPoint);
+				}
+			}catch (ArrayIndexOutOfBoundsException e) {}
+			try {
+				if(SimilarityArray[StartX][StartY+1] > blockThresh) {
+					edgeArray = tailCheck4(SimilarityArray,StartX,StartY+1,edgeArray,testedArray, Iteration);
+				} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
+					edgeArray.add(CurrentPoint);
+				}
+			}catch (ArrayIndexOutOfBoundsException e) {}
+			try {
+				if(SimilarityArray[StartX-1][StartY] > blockThresh) {
+					edgeArray = tailCheck4(SimilarityArray,StartX-1,StartY,edgeArray,testedArray, Iteration);
+				} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
+					edgeArray.add(CurrentPoint);
+				}
+			}catch (ArrayIndexOutOfBoundsException e) {}
+			try {
+				if(SimilarityArray[StartX][StartY-1] > blockThresh) {
+					edgeArray = tailCheck4(SimilarityArray,StartX,StartY-1,edgeArray,testedArray, Iteration);
+				} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
+					edgeArray.add(CurrentPoint);
+				}
+			}catch (ArrayIndexOutOfBoundsException e) {}
 		}
+		System.out.println("returning");
 		return edgeArray;
 	}
 	private Boolean ALContainsArray(ArrayList<int[]> AL, int[] intArray) {
