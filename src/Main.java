@@ -29,7 +29,7 @@ public class Main {
 		NeuralNetwork net = new NeuralNetwork();
 		double[] data = new double[net.getNumInputs()];
 		
-		while(iter <= 10000000){
+		while(iter <= 8000000){
 			net.train(trainingIndex);
 			if(iter % 100000 == 0){
 				System.out.println("ITERATION: " + iter);
