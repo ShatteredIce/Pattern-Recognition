@@ -30,17 +30,20 @@ public class Main {
 		String type = "png";
 		
 		BufferedImage test = loadImage("./res/raw/" + shapeName + "." + type);
-		System.out.print("it is real: " + realORfake(test));
+		
+		//System.out.print("it is real: " + realORfake(test));
 		System.out.println("hi");
 		
-		storeImage(findEdges(convertGrayscale(test)), "./res/processed/" + shapeName+ "_outTEST6.png");
-		storeImage(highlightShape(checkEdges(findEdges(convertGrayscale(gaussianBlur(gaussianBlur(gaussianBlur(test)))))), test), "./res/processed/" + shapeName+ "_outTEST4.png");
-		storeImage(checkEdges(findEdges(convertGrayscale(gaussianBlur(gaussianBlur(gaussianBlur(test)))))), "./res/processed/" + shapeName+ "_outTEST5.png");
+		//storeImage(findEdges(convertGrayscale(test)), "./res/processed/" + shapeName+ "_outTEST6.png");
+		//storeImage(highlightShape(checkEdges(findEdges(convertGrayscale(gaussianBlur(gaussianBlur(gaussianBlur(test)))))), test), "./res/processed/" + shapeName+ "_outTEST4.png");
+		//storeImage(checkEdges((findEdges(convertGrayscale(gaussianBlur(gaussianBlur(gaussianBlur(test))))))), "./res/processed/" + shapeName+ "_outTEST5.png");
 		//storeImage(highlightShape(checkEdges(findEdges(convertGrayscale(gaussianBlur(gaussianBlur(gaussianBlur(test)))))), test), "./res/processed/" + shapeName+ "_outTEST.png");
 		//storeImage(highlightShape(checkEdges(gaussianBlur(gaussianBlur(gaussianBlur(findEdges((convertGrayscale(test))))))), test), "./res/processed/" + shapeName+ "_outTEST.png");
 		//storeImage(highlightShape(findEdges((convertGrayscale(test))), test), "./res/processed/" + shapeName+ "_out.png");
 		System.out.print("hello!");
-		BufferedImage shape = highlightShape(findEdges(convertGrayscale(test)), test);
+		BufferedImage shape = highlightShape(checkEdges(findEdges((test))), test);
+		storeImage(shape, "./res/processed/" + shapeName+ "_out.png");
+		System.out.println("end test");
 		ArrayList<ArrayList<Integer>> mine = findEndpoints(checkEdges(findEdges((test))));
 		System.out.println("the list size is: " + mine.size());
 		
@@ -467,11 +470,12 @@ public class Main {
 			
 		}else{
 			//ArrayList<ArrayList<Integer>> thePoints = tryToFindEndHelp(firstPoint, blackLines, 0.0, new LinkedList<ArrayList<Double>>(), true, new ArrayList<ArrayList<Integer>>(), firstPoint);
-			firstPoint.remove(0);
+			/*firstPoint.remove(0);
 			firstPoint.remove(0);
 			firstPoint.add(234);
 			firstPoint.add(200);
 			
+			*/
 			ArrayList<ArrayList<Integer>> thePoints = tryToFindEndHelp(firstPoint, blackLines, 0.0, new LinkedList<ArrayList<Double>>(), true, new ArrayList<ArrayList<Integer>>(), firstPoint, -1);
 			System.out.println("thePoints size is: " + thePoints.size());
 			thePoints = endPointPreciser(thePoints, blackLines);
