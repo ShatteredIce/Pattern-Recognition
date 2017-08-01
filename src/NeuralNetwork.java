@@ -4,31 +4,33 @@ import java.util.Random;
 public class NeuralNetwork {
 	
 	final Random random = new Random();
-	final int rawInputs = 2;
-	int[] neuronsInLayer = {8, 4};
+	final int rawInputs = 3;
+	int[] neuronsInLayer = {4, 4, 3};
 	ArrayList<Neuron[]> layers = new ArrayList<>();
 	
-//	double[][] trainingData = {{5, 1, 1}, {7, 6, 1}, {3, 0, 2}, {5, 7, 5},
-//			{2, 6, 1}, {0, 4, 3}, {1, 1, 4}, {7, 2, 8}, {6, 8, 9}, 
-//			{2, 2, 2}, {7, 7, 7}, {0, 0, 0}, {5, 5, 4}, {3, 1, 3},
-//			{2, 6, 6}, {9, 9, 5}, {6, 2, 6}, {1, 3, 3}, {6, 6, 2}, 
-//			{8, 7, 8}, {3, 4, 4}};
-//	
-//	double[][] trainingAnswers = {{1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {0, 1, 0},
-//			{0, 1, 0}, {0, 1, 0}, {0, 0, 1}, {0, 0, 1}, {0, 0, 1}, 
-//			{0.33, 0.33, 0.33}, {0.33, 0.33, 0.33}, {0.33, 0.33, 0.33}, {0.5, 0.5, 0}, {0.5, 0, 0.5},
-//			{0, 0.5, 0.5}, {0.5, 0.5, 0}, {0.5, 0, 0.5}, {0, 0.5, 0.5},
-//			{0.5, 0.5, 0}, {0.5, 0, 0.5}, {0, 0.5, 0.5}};
-//	
+	double[][] trainingData = {{5, 1, 1}, {7, 6, 1}, {3, 0, 2}, {5, 7, 5},
+			{2, 6, 1}, {0, 4, 3}, {1, 1, 4}, {7, 2, 8}, {6, 8, 9},
+			{7, 6, 2}, {1, 5, 4}, {0, 8, 9},
+			{2, 2, 2}, {7, 7, 7}, {0, 0, 0}, {5, 5, 4}, {3, 1, 3},
+			{2, 6, 6}, {9, 9, 5}, {6, 2, 6}, {1, 3, 3}, {6, 6, 2}, 
+			{8, 7, 8}, {3, 4, 4}, {7, 7, 0}, {6, 1, 6}, {0, 9, 9},
+			{6, 6, 0}, {4, 3, 4}, {5, 8, 8}};
 	
-	final int trainingSetSize = 100;
-	final int trainingMax = 100;
-	double[][] trainingData = new double[trainingSetSize][3];
-	double[][] trainingAnswers = new double[trainingSetSize][3];
+	double[][] trainingAnswers = {{1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {0, 1, 0},
+			{0, 1, 0}, {0, 1, 0}, {0, 0, 1}, {0, 0, 1}, {0, 0, 1}, {1, 0, 0}, {0, 1, 0}, {0, 0, 1}, 
+			{0.33, 0.33, 0.33}, {0.33, 0.33, 0.33}, {0.33, 0.33, 0.33}, {0.5, 0.5, 0}, {0.5, 0, 0.5},
+			{0, 0.5, 0.5}, {0.5, 0.5, 0}, {0.5, 0, 0.5}, {0, 0.5, 0.5},
+			{0.5, 0.5, 0}, {0.5, 0, 0.5}, {0, 0.5, 0.5}, {0.5, 0.5, 0}, {0.5, 0, 0.5}, 
+			{0, 0.5, 0.5}, {0.5, 0.5, 0}, {0.5, 0, 0.5}, {0, 0.5, 0.5}};
+	
+	
+//	final int trainingSetSize = 100;
+//	final int trainingMax = 100;
+//	double[][] trainingData = new double[trainingSetSize][rawInputs];
+//	double[][] trainingAnswers = new double[trainingSetSize][neuronsInLayer[1]];
 
 	
 	public NeuralNetwork(){
-		generateTrainingData();
 		
 		//populate layers of neurons
 		for(int i = 0; i < neuronsInLayer.length; i++){
@@ -44,28 +46,33 @@ public class NeuralNetwork {
 	
 	public void generateTrainingData(){
 		//fill training data with random numbers
-		for(double[] tD : trainingData) {
-			tD[0] = random.nextInt(trainingMax);
-			tD[1] = random.nextInt(trainingMax);
-			tD[2] = random.nextInt(trainingMax);
-		}
-		for(int i = 0; i < trainingSetSize; i ++) {
-			double max = Integer.MIN_VALUE;
-			int highestIndex = -1;
-			int k = 0;
-			for(double td : trainingData[i]) {
-				if(td > max) {
-					max = td;
-					highestIndex = k;
-				}
-				k++;
-			}
-			System.out.println(max);
-			System.out.println(highestIndex);
-			for(int j= 0; j < 3; j ++) {
-				trainingAnswers[i][j] = j == highestIndex? 1 : 0;
-			}
-		}
+//		for(double[] tD : trainingData) {
+//			tD[0] = random.nextInt(trainingMax);
+//			tD[1] = random.nextInt(trainingMax);
+//			tD[2] = random.nextInt(trainingMax);
+//		}
+//		for(int i = 0; i < trainingSetSize; i ++) {
+//			double max = Integer.MIN_VALUE;
+//			int[] highestIndex = new int[3];
+//			int k = 0;
+//			int l = 0;
+//			int added = 0;
+//			for(double td : trainingData[i]) {
+//				if(td > max) {
+//					max = td;
+//					if(added == 0)	highestIndex[l] = k;
+//				} else if(td == max){
+//					l++;
+//					highestIndex[l] = k;
+//				}
+//				k++;
+//			}
+//			System.out.println(max);
+//			System.out.println(highestIndex);
+//			for(int j= 0; j < 3; j ++) {
+//				trainingAnswers[i][j] = (j == highestIndex) ? 1 : 0;
+//			}
+//		}
 	}
 	
 	public void run(double[] input){
@@ -101,8 +108,8 @@ public class NeuralNetwork {
 					totalContribution += layerContribution[j][i];
 				}
 				lastLayerContribution[i] = n.updateWeights(totalContribution);
-				backpropagate(currentLayer-1, lastLayerContribution);
 			}
+			backpropagate(currentLayer-1, lastLayerContribution);
 		}
 		
 	}
