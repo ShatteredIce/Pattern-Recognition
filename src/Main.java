@@ -13,7 +13,7 @@ import javax.imageio.ImageIO;
 public class Main {
 
 	final int colorThreshold = 5;
-	final int neighborMinThreshold = 5; //five or less or stack overflow 
+	final int neighborMinThreshold = 5;
 	final int neighborMaxThreshold = 25;
 	final int blockThresh = 22;
 	final int differentiator = 2;
@@ -22,51 +22,55 @@ public class Main {
 	private ArrayList<ArrayList<Integer>> slimeTrail = new ArrayList<ArrayList<Integer>>();
 	
 	public Main(){
-		String shapeName = "triangle1_ugly";
-		BufferedImage input = loadImage("./res/raw/" + shapeName + ".png");
-//		ArrayList<BufferedImage> tests = cropToBlock(convertGrayscale(input));
-		ArrayList<BufferedImage> tests = new ArrayList<>();
-		tests.add(input);
-//		BufferedImage test = convertGrayscale(best);
-		int index = -1;
-		for(BufferedImage test : tests) {
-			index ++;
-			BufferedImage shape = highlightShape(findEdges((test)), test);
-			//storeImage(shape, "./res/processed/" + shapeName + "_out.png");
-			System.out.println("finished highlighting shape");
-			
-			ArrayList<ArrayList<Integer>> endpoints = findEndpoints(findEdges(test));
-			System.out.println("the list size is: " + endpoints.size());
-			
-			//display slime trail as red outline
-			for (int k = 0; k < slimeTrail.size(); k += 1){
-				shape.setRGB(slimeTrail.get(k).get(0), slimeTrail.get(k).get(1), (new Color(255,0,0)).getRGB());
-			}
-			//display endpoints as green dots
-			for (int i = 0; i < endpoints.size(); i ++){
-				ArrayList temp = endpoints.get(i);
-				for (int j = -2; j < 2; j ++) {
-					for (int k = -2; k < 2; k ++) {
-						shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(0,255,0)).getRGB());
-						if (i == endpoints.size() -1){
-							//shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(255,255,255)).getRGB());
-						}
-					}
-				}
-				System.out.println("X:" + temp.get(0) + " Y: " + temp.get(1));
-			}
-			storeImage(shape, "./res/processed/" + shapeName + "_out.png");
-			ArrayList<ArrayList<ArrayList<Integer>>> myList = new ArrayList<ArrayList<ArrayList<Integer>>>();
-			myList.add(endpoints);
-			
-			Double[][] my = processShape(myList);
-			for (Double[] value: my){
-				for (Double actualValue : value){
-					System.out.println(actualValue);
-				}
-			}
-			
-		}
+		String shapeName = "square";
+		String type = "png";
+		
+		BufferedImage input = loadImage("./res/raw/" + shapeName + "." + type);
+		BufferedImage shape = highlightShape(checkEdges(findEdges((input))), input);
+		storeImage(shape, "./res/processed/" + shapeName + "_out.png");
+////		ArrayList<BufferedImage> tests = cropToBlock(convertGrayscale(input));
+//		ArrayList<BufferedImage> tests = new ArrayList<>();
+//		tests.add(input);
+////		BufferedImage test = convertGrayscale(best);
+//		int index = -1;
+//		for(BufferedImage test : tests) {
+//			index ++;
+//			BufferedImage shape = highlightShape(checkEdges(findEdges((test))), test);
+//			//storeImage(shape, "./res/processed/" + shapeName + "_out.png");
+//			System.out.println("finished highlighting shape");
+//			
+//			ArrayList<ArrayList<Integer>> endpoints = findEndpoints(checkEdges(findEdges(test)));
+//			System.out.println("the list size is: " + endpoints.size());
+//			
+//			//display slime trail as red outline
+//			for (int k = 0; k < slimeTrail.size(); k += 1){
+//				shape.setRGB(slimeTrail.get(k).get(0), slimeTrail.get(k).get(1), (new Color(255,0,0)).getRGB());
+//			}
+//			//display endpoints as green dots
+//			for (int i = 0; i < endpoints.size(); i ++){
+//				ArrayList temp = endpoints.get(i);
+//				for (int j = -2; j < 2; j ++) {
+//					for (int k = -2; k < 2; k ++) {
+//						shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(0,255,0)).getRGB());
+//						if (i == endpoints.size() -1){
+//							//shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(255,255,255)).getRGB());
+//						}
+//					}
+//				}
+//				System.out.println("X:" + temp.get(0) + " Y: " + temp.get(1));
+//			}
+//			storeImage(shape, "./res/processed/" + shapeName + "_out.png");
+//			ArrayList<ArrayList<ArrayList<Integer>>> myList = new ArrayList<ArrayList<ArrayList<Integer>>>();
+//			myList.add(endpoints);
+//			
+//			Double[][] my = processShape(myList);
+//			for (Double[] value: my){
+//				for (Double actualValue : value){
+//					System.out.println(actualValue);
+//				}
+//			}
+//			
+//		}
 	}
 
 	public static void main(String[] args) {
@@ -144,6 +148,72 @@ public class Main {
 		return convertedImage;
 	}
 	
+	private BufferedImage gaussianBlur(BufferedImage img){
+		double sigma = 1;
+		int radius = 1;
+		int width = img.getWidth();
+		int height = img.getHeight();
+
+		BufferedImage convertedImage = new BufferedImage(width, height, img.getType()); 
+		for (int y = 0; y < height; y++) {
+			for (int x = 0; x < radius; x++) {
+				convertedImage.setRGB(x, y, img.getRGB(x, y));
+			}
+			for (int x = width - radius; x < width; x++) {
+				convertedImage.setRGB(x, y, img.getRGB(x, y));
+			}
+		}
+		for (int x = radius; x < width - radius; x++) {
+			for (int y = 0; y < radius; y++) {
+				convertedImage.setRGB(x, y, img.getRGB(x, y));
+			}
+			for (int y = height - radius; y < height; y++) {
+				convertedImage.setRGB(x, y, img.getRGB(x, y));
+			}
+		}
+		for(int xpos = radius; xpos < width - radius; xpos++){
+			for(int ypos = radius; ypos < height - radius; ypos++){
+				double red = 0;
+				double blue = 0;
+				double green = 0;
+				double[][] weights = new double[2*radius + 1][2* radius + 1];
+				double sumWeights = 0;
+				Color[][] colors = new Color[2*radius + 1][2* radius + 1];
+				//find color and weight for the 3 * 3 box surrounding target pixel
+				for(int i = xpos - radius; i <= xpos + radius; i++){
+					for(int j = ypos - radius; j <= ypos + radius; j++){
+						double weight = gaussian(i - xpos, j - ypos, sigma);
+						weights[i - xpos + radius][j - ypos + radius] = weight;
+						sumWeights += weight;
+						colors[i - xpos + radius][j - ypos + radius] = new Color(img.getRGB(i, j));
+					}
+				}
+				//set sum of all weights to 1
+				for (int i = 0; i < weights.length; i++) {
+					for (int j = 0; j < weights[0].length; j++) {
+						weights[i][j]  /= sumWeights;
+					}
+				}
+				//get gaussian blur value of center point
+				for (int i = 0; i < weights.length; i++) {
+					for (int j = 0; j < weights[0].length; j++) {
+						red +=  weights[i][j] * colors[i][j].getRed();
+						green +=  weights[i][j] * colors[i][j].getGreen();
+						blue +=  weights[i][j] * colors[i][j].getBlue();
+					}
+				}
+				Color newColor = new Color((int) red, (int) green, (int) blue);
+				convertedImage.setRGB(xpos, ypos, newColor.getRGB());
+			}
+		}
+		return convertedImage;
+	}
+
+	
+	private double gaussian(double x, double y, double sigma){
+		return 1/(2*Math.PI*Math.pow(sigma, 2))*Math.exp(-(Math.pow(x, 2) + Math.pow(y, 2))/ 2*Math.pow(sigma, 2));
+	}
+	
 	private BufferedImage findEdges(BufferedImage img){
 		int width = img.getWidth();
 		int height = img.getHeight();
@@ -171,6 +241,160 @@ public class Main {
 		}
 		return convertedImage;
 	}
+	
+	private BufferedImage highlightShape(BufferedImage blackLines, BufferedImage real){
+		BufferedImage highlight = new BufferedImage(real.getWidth(), real.getHeight(), real.getType());
+		int picWidth = highlight.getWidth();
+		int picHeight = highlight.getHeight();
+		
+		for (int i = 0; i < picWidth; i +=1){
+			for (int k = 0; k < picHeight; k += 1){
+				highlight.setRGB(i, k, real.getRGB(i, k));
+			}
+		}
+		Color red = Color.RED;
+		Color trace = Color.CYAN;
+		for (int counterX = 0; counterX < (picWidth) ; counterX += 1){
+    		for (int counterY = 0; counterY < (picHeight) ; counterY += 1){
+    			int originalColor;
+        		originalColor = blackLines.getRGB(counterX, counterY);
+        		Color myColor = new Color(originalColor);
+        		if (myColor.equals(red)){
+        			highlight.setRGB(counterX, counterY, trace.getRGB());
+        		}
+    		}
+		}
+		return highlight;
+	}
+	
+	
+	private boolean checkSimilarity(Color pixel1, Color pixel2){
+		int red1 = pixel1.getRed();
+		int red2 = pixel2.getRed();
+		if(Math.abs(red1 - red2) > colorThreshold){
+			return true;
+		}
+		else{
+			return false;
+		}
+	}
+	
+	//Nested Arraylists: Shape >> Endpoints >> X,Y
+	private Double[][] processShape(ArrayList<ArrayList<ArrayList<Integer>>> inArray) {
+		int len = inArray.size();
+		int i = 0;
+		Double[][] outArray = new Double[len][4];
+		/// Identify: ratio of max-width:max-height, number of points, std from
+		/// average angle
+		for (ArrayList<ArrayList<Integer>> shape : inArray) {
+			double minX = (double) shape.get(0).get(0), minY = (double) shape.get(0).get(1),
+					maxX = (double) shape.get(0).get(1), maxY = (double) shape.get(0).get(1);
+			Double[] angles = new Double[shape.size()];
+			double sum = 0;
+			int j = 0;
+			for (ArrayList<Integer> points : shape) {
+				double x = (double) points.get(0);
+				double y = (double) points.get(1);
+				double x1 = (double) shape.get(j == shape.size() - 1 ? 0 : j + 1).get(0);
+				double x2 = (double) shape.get(j == 0 ? shape.size() - 1 : j - 1).get(0);
+				double y1 = (double) shape.get(j == shape.size() - 1 ? 0 : j + 1).get(1);
+				double y2 = (double) shape.get(j == 0 ? shape.size() - 1 : j - 1).get(1);
+				minX = x < minX ? x : minX;
+				minY = y < minY ? y : minY;
+				maxX = x > maxX ? x : maxX;
+				maxY = y > maxY ? y : maxY;
+				double a = Math.sqrt(sqr(x-x1)+sqr(y-y1));
+				double b = Math.sqrt(sqr(x-x2)+sqr(y-y2));
+				double c = Math.sqrt(sqr(x2-x1)+sqr(y2-y1));
+				//System.out.println("Distances 1,2,&3 are"+a+", "+b+", & "+c);
+				double C = Math.acos((sqr(c)-(sqr(a)+sqr(b)))/(-2*a*b));
+				//System.out.println("Before acos:"+C);
+				angles[j] = C;
+				sum += angles[j];
+				j++;
+			}
+			double avg = sum / angles.length;
+			double sqDiffSum = 0;
+			for (double angle: angles) {
+//				System.out.println("angle: "+angle);
+//				System.out.println("angle in degrees: "+(angle*180/Math.PI));
+				sqDiffSum += (avg - angle) * (avg - angle);
+			}
+			double r = (maxX - minX) / (maxY - minY);
+			double sqDiffMean = sqDiffSum / angles.length;
+			double std = Math.sqrt(sqDiffMean);
+
+			outArray[i][0] = (double) shape.size();
+			outArray[i][1] = r;
+			outArray[i][2] = std;
+			outArray[i][3] = avg;
+			i++;
+		}
+		return outArray;
+	}
+	
+	private double sqr(double in) {
+		return in * in;
+	}
+	
+	//kenny's code for cropping, currently broken
+	private ArrayList<int[]> tailCheck4(int[][] SimilarityArray, int StartX, int StartY, ArrayList<int[]> edgeArray,ArrayList<int[]> testedArray,int Iteration) {
+		int[] CurrentPoint = {StartX, StartY};
+		/*for(int[] o : testedArray) {
+			for(int i : o) {
+				System.out.print(i+" ");
+			}
+			System.out.println("has been tested");
+		}*/
+		Iteration ++;
+		System.out.println("Iteration "+Iteration);
+		if(!ALContainsArray(testedArray,CurrentPoint)) {
+			System.out.println("Testing ("+StartX+","+StartY+")"+" which is: "+SimilarityArray[StartX][StartY]);
+			testedArray.add(CurrentPoint);
+			try {
+				if(SimilarityArray[StartX+1][StartY] > blockThresh) {
+					edgeArray = tailCheck4(SimilarityArray,StartX+1,StartY,edgeArray,testedArray, Iteration);
+				} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
+					edgeArray.add(CurrentPoint);
+				}
+			}catch (ArrayIndexOutOfBoundsException e) {}
+			try {
+				if(SimilarityArray[StartX][StartY+1] > blockThresh) {
+					edgeArray = tailCheck4(SimilarityArray,StartX,StartY+1,edgeArray,testedArray, Iteration);
+				} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
+					edgeArray.add(CurrentPoint);
+				}
+			}catch (ArrayIndexOutOfBoundsException e) {}
+			try {
+				if(SimilarityArray[StartX-1][StartY] > blockThresh) {
+					edgeArray = tailCheck4(SimilarityArray,StartX-1,StartY,edgeArray,testedArray, Iteration);
+				} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
+					edgeArray.add(CurrentPoint);
+				}
+			}catch (ArrayIndexOutOfBoundsException e) {}
+			try {
+				if(SimilarityArray[StartX][StartY-1] > blockThresh) {
+					edgeArray = tailCheck4(SimilarityArray,StartX,StartY-1,edgeArray,testedArray, Iteration);
+				} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
+					edgeArray.add(CurrentPoint);
+				}
+			}catch (ArrayIndexOutOfBoundsException e) {}
+		}
+		System.out.println("returning");
+		return edgeArray;
+	}
+	private Boolean ALContainsArray(ArrayList<int[]> AL, int[] intArray) {
+		for(int[] iA : AL) {
+			if(Arrays.equals(iA, intArray)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	
+	//natalie's code 
+	//have no idea how this works
 	
 	//ik bad form but...
 	private int connectedPixels = 0;
@@ -278,34 +502,6 @@ public class Main {
 		return real;
 	}
 	
-	
-	private BufferedImage highlightShape(BufferedImage blackLines, BufferedImage real){
-		BufferedImage highlight = new BufferedImage(real.getWidth(), real.getHeight(), real.getType());
-		int picWidth = highlight.getWidth();
-		int picHeight = highlight.getHeight();
-		
-		for (int i = 0; i < picWidth; i +=1){
-			for (int k = 0; k < picHeight; k += 1){
-				highlight.setRGB(i, k, real.getRGB(i, k));
-			}
-		}
-		Color red = Color.RED;
-		Color trace = Color.CYAN;
-		for (int counterX = 0; counterX < (picWidth) ; counterX += 1){
-    		for (int counterY = 0; counterY < (picHeight) ; counterY += 1){
-    			int originalColor;
-        		originalColor = blackLines.getRGB(counterX, counterY);
-        		Color myColor = new Color(originalColor);
-        		if (myColor.equals(red)){
-        			highlight.setRGB(counterX, counterY, trace.getRGB());
-        		}
-    		}
-		}
-		return highlight;
-	}
-	
-
-
 	private ArrayList<ArrayList<Integer>> tryToFindEndHelp(ArrayList<Integer> currentCoord, BufferedImage blackLines, double average, LinkedList<ArrayList<Double>> history, boolean first, ArrayList<ArrayList<Integer>> masterList, ArrayList<Integer> firstPoint, int currentDir){ //this is recursive
 		//ends if hits the edge of screen OR can't find colored pixel
 		
@@ -525,73 +721,6 @@ public class Main {
 		return listAll;
 	}
 	
-	
-	private boolean checkSimilarity(Color pixel1, Color pixel2){
-		int red1 = pixel1.getRed();
-		int red2 = pixel2.getRed();
-		if(Math.abs(red1 - red2) > colorThreshold){
-			return true;
-		}
-		else{
-			return false;
-		}
-	}
-	
-	//Nested Arraylists: Shape >> Endpoints >> X,Y
-	private Double[][] processShape(ArrayList<ArrayList<ArrayList<Integer>>> inArray) {
-		int len = inArray.size();
-		int i = 0;
-		Double[][] outArray = new Double[len][4];
-		/// Identify: ratio of max-width:max-height, number of points, std from
-		/// average angle
-		for (ArrayList<ArrayList<Integer>> shape : inArray) {
-			double minX = (double) shape.get(0).get(0), minY = (double) shape.get(0).get(1),
-					maxX = (double) shape.get(0).get(1), maxY = (double) shape.get(0).get(1);
-			Double[] angles = new Double[shape.size()];
-			double sum = 0;
-			int j = 0;
-			for (ArrayList<Integer> points : shape) {
-				double x = (double) points.get(0);
-				double y = (double) points.get(1);
-				double x1 = (double) shape.get(j == shape.size() - 1 ? 0 : j + 1).get(0);
-				double x2 = (double) shape.get(j == 0 ? shape.size() - 1 : j - 1).get(0);
-				double y1 = (double) shape.get(j == shape.size() - 1 ? 0 : j + 1).get(1);
-				double y2 = (double) shape.get(j == 0 ? shape.size() - 1 : j - 1).get(1);
-				minX = x < minX ? x : minX;
-				minY = y < minY ? y : minY;
-				maxX = x > maxX ? x : maxX;
-				maxY = y > maxY ? y : maxY;
-				double a = Math.sqrt(sqr(x-x1)+sqr(y-y1));
-				double b = Math.sqrt(sqr(x-x2)+sqr(y-y2));
-				double c = Math.sqrt(sqr(x2-x1)+sqr(y2-y1));
-				//System.out.println("Distances 1,2,&3 are"+a+", "+b+", & "+c);
-				double C = Math.acos((sqr(c)-(sqr(a)+sqr(b)))/(-2*a*b));
-				//System.out.println("Before acos:"+C);
-				angles[j] = C;
-				sum += angles[j];
-				j++;
-			}
-			double avg = sum / angles.length;
-			double sqDiffSum = 0;
-			for (double angle: angles) {
-//				System.out.println("angle: "+angle);
-//				System.out.println("angle in degrees: "+(angle*180/Math.PI));
-				sqDiffSum += (avg - angle) * (avg - angle);
-			}
-			double r = (maxX - minX) / (maxY - minY);
-			double sqDiffMean = sqDiffSum / angles.length;
-			double std = Math.sqrt(sqDiffMean);
-
-			outArray[i][0] = (double) shape.size();
-			outArray[i][1] = r;
-			outArray[i][2] = std;
-			outArray[i][3] = avg;
-			i++;
-		}
-		return outArray;
-	}
-	
-	
 	private ArrayList<ArrayList<Integer>> findEndpoints(BufferedImage blackLines){
 		//passing him an array list of shapes (arraylists) of points (arraylists)
 		//ArrayList<ArrayList> allPoints = findAllPointsOnShapes(blackLines);
@@ -633,59 +762,6 @@ public class Main {
 		
 	}
 
-	private ArrayList<int[]> tailCheck4(int[][] SimilarityArray, int StartX, int StartY, ArrayList<int[]> edgeArray,ArrayList<int[]> testedArray,int Iteration) {
-		int[] CurrentPoint = {StartX, StartY};
-		/*for(int[] o : testedArray) {
-			for(int i : o) {
-				System.out.print(i+" ");
-			}
-			System.out.println("has been tested");
-		}*/
-		Iteration ++;
-		System.out.println("Iteration "+Iteration);
-		if(!ALContainsArray(testedArray,CurrentPoint)) {
-			System.out.println("Testing ("+StartX+","+StartY+")"+" which is: "+SimilarityArray[StartX][StartY]);
-			testedArray.add(CurrentPoint);
-			try {
-				if(SimilarityArray[StartX+1][StartY] > blockThresh) {
-					edgeArray = tailCheck4(SimilarityArray,StartX+1,StartY,edgeArray,testedArray, Iteration);
-				} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
-					edgeArray.add(CurrentPoint);
-				}
-			}catch (ArrayIndexOutOfBoundsException e) {}
-			try {
-				if(SimilarityArray[StartX][StartY+1] > blockThresh) {
-					edgeArray = tailCheck4(SimilarityArray,StartX,StartY+1,edgeArray,testedArray, Iteration);
-				} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
-					edgeArray.add(CurrentPoint);
-				}
-			}catch (ArrayIndexOutOfBoundsException e) {}
-			try {
-				if(SimilarityArray[StartX-1][StartY] > blockThresh) {
-					edgeArray = tailCheck4(SimilarityArray,StartX-1,StartY,edgeArray,testedArray, Iteration);
-				} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
-					edgeArray.add(CurrentPoint);
-				}
-			}catch (ArrayIndexOutOfBoundsException e) {}
-			try {
-				if(SimilarityArray[StartX][StartY-1] > blockThresh) {
-					edgeArray = tailCheck4(SimilarityArray,StartX,StartY-1,edgeArray,testedArray, Iteration);
-				} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
-					edgeArray.add(CurrentPoint);
-				}
-			}catch (ArrayIndexOutOfBoundsException e) {}
-		}
-		System.out.println("returning");
-		return edgeArray;
-	}
-	private Boolean ALContainsArray(ArrayList<int[]> AL, int[] intArray) {
-		for(int[] iA : AL) {
-			if(Arrays.equals(iA, intArray)) {
-				return true;
-			}
-		}
-		return false;
-	}
 	private ArrayList endPointPreciser(ArrayList<ArrayList<Integer>> endPoints, BufferedImage blackLines){
 		ArrayList <ArrayList> precise = new ArrayList<ArrayList>(); //what i will return
 		for (int i = 0; i < endPoints.size(); i += 1){
@@ -738,8 +814,5 @@ public class Main {
 			precise.add(myList);
 		}
 		return precise;
-	}
-	private double sqr(double in) {
-		return in * in;
 	}
 }
