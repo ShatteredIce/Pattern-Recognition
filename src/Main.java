@@ -11,10 +11,7 @@ import java.util.Scanner;
 
 import javax.imageio.ImageIO;
 
-
-
 public class Main {
-	
 
 	final int colorThreshold = 5;
 	final int neighborMinThreshold = 5; //five or less or stack overflow 
@@ -26,33 +23,34 @@ public class Main {
 	private ArrayList<ArrayList<Integer>> slimeTrail = new ArrayList<ArrayList<Integer>>();
 	
 	public Main(){
-		String shapeName = "triangle4";
-		BufferedImage best = loadImage("./res/raw/" + shapeName + ".png");
-		ArrayList<BufferedImage> tests = cropToBlock(convertGrayscale(best));
+		String shapeName = "triangle1_ugly";
+		BufferedImage input = loadImage("./res/raw/" + shapeName + ".png");
+//		ArrayList<BufferedImage> tests = cropToBlock(convertGrayscale(input));
+		ArrayList<BufferedImage> tests = new ArrayList<>();
+		tests.add(input);
 //		BufferedImage test = convertGrayscale(best);
 		int index = -1;
 		for(BufferedImage test : tests) {
 			index ++;
-			storeImage(highlightShape(findEdges(test),test), "./res/processed/" + shapeName + "_out.png");
-			System.out.print("finished storeImage 1");
 			BufferedImage shape = highlightShape(findEdges((test)), test);
+			//storeImage(shape, "./res/processed/" + shapeName + "_out.png");
 			System.out.println("finished highlighting shape");
-			ArrayList<ArrayList<Integer>> mine = findEndpoints(findEdges(test));
-			System.out.println("the list size is: " + mine.size());
 			
+			ArrayList<ArrayList<Integer>> endpoints = findEndpoints(findEdges(test));
+			System.out.println("the list size is: " + endpoints.size());
 			
-			//shape.setRGB(536, 33, (new Color(255,0,0)).getRGB());
+			//display slime trail as red outline
 			for (int k = 0; k < slimeTrail.size(); k += 1){
 				shape.setRGB(slimeTrail.get(k).get(0), slimeTrail.get(k).get(1), (new Color(255,0,0)).getRGB());
 			}
-			for (int i = 0; i < mine.size(); i ++){
-				
-				//System.out.println("x is:" + mine.get(i).get(0) + ", y is: " + mine.get(i).get(1));
-				ArrayList temp = mine.get(i);
+			
+			//display endpoints as green dots
+			for (int i = 0; i < endpoints.size(); i ++){
+				ArrayList temp = endpoints.get(i);
 				for (int j = -2; j < 2; j ++) {
 					for (int k = -2; k < 2; k ++) {
 						shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(0,255,0)).getRGB());
-						if (i == mine.size() -1){
+						if (i == endpoints.size() -1){
 							//shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(255,255,255)).getRGB());
 						}
 					}
@@ -61,7 +59,7 @@ public class Main {
 			}
 			storeImage(shape, "./res/processed/" + shapeName + "_out.png");
 			ArrayList<ArrayList<ArrayList<Integer>>> myList = new ArrayList<ArrayList<ArrayList<Integer>>>();
-			myList.add(mine);
+			myList.add(endpoints);
 			
 			Double[][] my = processShape(myList);
 			for (Double[] value: my){
@@ -273,6 +271,7 @@ public class Main {
 		
 	}
 
+	//Nested Arraylists: Shape >> Endpoints >> X,Y
 	private Double[][] processShape(ArrayList<ArrayList<ArrayList<Integer>>> inArray) {
 		int len = inArray.size();
 		int i = 0;
@@ -327,7 +326,7 @@ public class Main {
 	}
 	
 	
-	private ArrayList findEndpoints(BufferedImage blackLines){
+	private ArrayList<ArrayList<Integer>> findEndpoints(BufferedImage blackLines){
 		//passing him an array list of shapes (arraylists) of points (arraylists)
 		//ArrayList<ArrayList> allPoints = findAllPointsOnShapes(blackLines);
 		//I GO COUNTER CLOCKWISE AROUND, WHITE ON RIGHT FROM POV
