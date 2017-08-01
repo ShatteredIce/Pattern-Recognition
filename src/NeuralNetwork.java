@@ -8,9 +8,11 @@ public class NeuralNetwork {
 	int[] neuronsInLayer = {4, 4, 3};
 	ArrayList<Neuron[]> layers = new ArrayList<>();
 	
-	double[][] trainingData = {{3, 0.863, 0.007, 1.047}, {3, 1.158, 0.003, 1.047}};
+	double[][] trainingData = {{3, 0.863, 0.007, 1.047}, {3, 1.158, 0.003, 1.047}, {3, 1.571, 0.201, 1.047}, 
+		{3, 0.864, 0.005, 1.047}, {4, 1, 0.002, 1.571}, {4, 1, 0.002, 1.571}, {4, 3.075, 0.009, 1.571}, {4, 0.841, 0.004, 1.571}}; 
 	
-	double[][] trainingAnswers = {{1, 0, 0}, {1, 0, 0}};
+	//triangle, square, rectangle
+	double[][] trainingAnswers = {{1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {0, 1, 0}, {0, 1, 0}, {0, 0, 1}, {0, 0, 1}};
 	
 	
 //	final int trainingSetSize = 100;

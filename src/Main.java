@@ -12,7 +12,7 @@ import javax.imageio.ImageIO;
 
 public class Main {
 
-	final int colorThreshold = 5;
+	final int colorThreshold = 50;
 	final int neighborMinThreshold = 5;
 	final int neighborMaxThreshold = 25;
 	final int blockThresh = 22;
@@ -21,56 +21,58 @@ public class Main {
 	final int spArCr = spaceAroundCrop;
 	private ArrayList<ArrayList<Integer>> slimeTrail = new ArrayList<ArrayList<Integer>>();
 	
+	final Color slimeTrailColor = new Color(255, 0, 0);
+	final Color endPointColor = new Color(0, 255, 0);
+	
 	public Main(){
-		String shapeName = "square";
+		String shapeName = "triangle7";
 		String type = "png";
 		
 		BufferedImage input = loadImage("./res/raw/" + shapeName + "." + type);
-		BufferedImage shape = highlightShape(checkEdges(findEdges((input))), input);
-		storeImage(shape, "./res/processed/" + shapeName + "_out.png");
-////		ArrayList<BufferedImage> tests = cropToBlock(convertGrayscale(input));
-//		ArrayList<BufferedImage> tests = new ArrayList<>();
-//		tests.add(input);
-////		BufferedImage test = convertGrayscale(best);
-//		int index = -1;
-//		for(BufferedImage test : tests) {
-//			index ++;
-//			BufferedImage shape = highlightShape(checkEdges(findEdges((test))), test);
-//			//storeImage(shape, "./res/processed/" + shapeName + "_out.png");
-//			System.out.println("finished highlighting shape");
-//			
-//			ArrayList<ArrayList<Integer>> endpoints = findEndpoints(checkEdges(findEdges(test)));
-//			System.out.println("the list size is: " + endpoints.size());
-//			
-//			//display slime trail as red outline
-//			for (int k = 0; k < slimeTrail.size(); k += 1){
-//				shape.setRGB(slimeTrail.get(k).get(0), slimeTrail.get(k).get(1), (new Color(255,0,0)).getRGB());
-//			}
-//			//display endpoints as green dots
-//			for (int i = 0; i < endpoints.size(); i ++){
-//				ArrayList temp = endpoints.get(i);
-//				for (int j = -2; j < 2; j ++) {
-//					for (int k = -2; k < 2; k ++) {
-//						shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(0,255,0)).getRGB());
-//						if (i == endpoints.size() -1){
-//							//shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(255,255,255)).getRGB());
-//						}
-//					}
-//				}
-//				System.out.println("X:" + temp.get(0) + " Y: " + temp.get(1));
-//			}
-//			storeImage(shape, "./res/processed/" + shapeName + "_out.png");
-//			ArrayList<ArrayList<ArrayList<Integer>>> myList = new ArrayList<ArrayList<ArrayList<Integer>>>();
-//			myList.add(endpoints);
-//			
-//			Double[][] my = processShape(myList);
-//			for (Double[] value: my){
-//				for (Double actualValue : value){
-//					System.out.println(actualValue);
-//				}
-//			}
-//			
-//		}
+//		ArrayList<BufferedImage> tests = cropToBlock(convertGrayscale(input));
+		ArrayList<BufferedImage> tests = new ArrayList<>();
+		tests.add(input);
+//		BufferedImage test = convertGrayscale(best);
+		int index = -1;
+		for(BufferedImage test : tests) {
+			index ++;
+			BufferedImage shape = highlightShape(checkEdges(findEdges((test))), test);
+			//storeImage(shape, "./res/processed/" + shapeName + "_out.png");
+			System.out.println("finished highlighting shape");
+			
+			ArrayList<ArrayList<Integer>> endpoints = findEndpoints(checkEdges(findEdges(test)));
+			System.out.println("the list size is: " + endpoints.size());
+			
+			//display slime trail as red outline
+			for (int k = 0; k < slimeTrail.size(); k += 1){
+				shape.setRGB(slimeTrail.get(k).get(0), slimeTrail.get(k).get(1), slimeTrailColor.getRGB());
+			}
+			//storeImage(shape, "./res/processed/" + shapeName + "_out.png");
+			//display endpoints as green dots
+			for (int i = 0; i < endpoints.size(); i ++){
+				ArrayList temp = endpoints.get(i);
+				for (int j = -2; j < 2; j ++) {
+					for (int k = -2; k < 2; k ++) {
+						shape.setRGB((int)temp.get(0), (int)temp.get(1), endPointColor.getRGB());
+						if (i == endpoints.size() -1){
+							//shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(255,255,255)).getRGB());
+						}
+					}
+				}
+				System.out.println("X:" + temp.get(0) + " Y: " + temp.get(1));
+			}
+			storeImage(shape, "./res/processed/" + shapeName + "_out.png");
+			ArrayList<ArrayList<ArrayList<Integer>>> myList = new ArrayList<ArrayList<ArrayList<Integer>>>();
+			myList.add(endpoints);
+			
+			Double[][] my = processShape(myList);
+			for (Double[] value: my){
+				for (Double actualValue : value){
+					System.out.println(actualValue);
+				}
+			}
+			
+		}
 	}
 
 	public static void main(String[] args) {
@@ -270,8 +272,13 @@ public class Main {
 	
 	private boolean checkSimilarity(Color pixel1, Color pixel2){
 		int red1 = pixel1.getRed();
+		int green1 = pixel1.getGreen();
+		int blue1 = pixel1.getBlue();
 		int red2 = pixel2.getRed();
-		if(Math.abs(red1 - red2) > colorThreshold){
+		int green2 = pixel2.getGreen();
+		int blue2 = pixel2.getBlue();
+		double difference = Math.sqrt(Math.pow(red1 - red2, 2) + Math.pow(green1 - green2, 2) + Math.pow(blue1 - blue2, 2));
+		if(difference > colorThreshold){
 			return true;
 		}
 		else{
@@ -502,7 +509,51 @@ public class Main {
 		return real;
 	}
 	
-	private ArrayList<ArrayList<Integer>> tryToFindEndHelp(ArrayList<Integer> currentCoord, BufferedImage blackLines, double average, LinkedList<ArrayList<Double>> history, boolean first, ArrayList<ArrayList<Integer>> masterList, ArrayList<Integer> firstPoint, int currentDir){ //this is recursive
+	private ArrayList findEndpoints(BufferedImage blackLines){
+		//passing him an array list of shapes (arraylists) of points (arraylists)
+		//ArrayList<ArrayList> allPoints = findAllPointsOnShapes(blackLines);
+		//I GO COUNTER CLOCKWISE AROUND, WHITE ON RIGHT FROM POV
+		
+		ArrayList<Integer> firstPoint = new ArrayList<Integer>(); //what i start from
+		ArrayList<ArrayList<Integer>> allEnds = new ArrayList<ArrayList<Integer>>();
+		
+		int picHeight = blackLines.getHeight();
+		int picWidth = blackLines.getWidth();
+		for (int counterY = 0; counterY < (picHeight) ; counterY += 1){
+    		for (int counterX = 0; counterX < (picWidth) ; counterX += 1){
+    			int originalColor;
+    			originalColor = blackLines.getRGB(counterX, counterY);
+        		Color myColor = new Color(originalColor);
+        		if (myColor.equals(Color.RED)){
+        			firstPoint.add(counterX);
+        			firstPoint.add(counterY);
+        			break;
+        		}
+        		
+    		}
+		}if (firstPoint.size() == 0){ //this means there is not a shape!!
+			System.out.println("not a shape...");
+			return null;
+			
+		}else{
+			//ArrayList<ArrayList<Integer>> thePoints = tryToFindEndHelp(firstPoint, blackLines, 0.0, new LinkedList<ArrayList<Double>>(), true, new ArrayList<ArrayList<Integer>>(), firstPoint);
+			/*firstPoint.remove(0);
+			firstPoint.remove(0);
+			firstPoint.add(234);
+			firstPoint.add(200);
+			
+			*/
+			int maxListNumber = findAllPointsOnShapes(blackLines).size()/80; 
+			ArrayList<ArrayList<Integer>> thePoints = tryToFindEndHelp(firstPoint, blackLines, 0.0, new LinkedList<ArrayList<Double>>(), true, new ArrayList<ArrayList<Integer>>(), firstPoint, -1, maxListNumber);
+			System.out.println("thePoints size is: " + thePoints.size());
+			thePoints = endPointPreciser(thePoints, blackLines);
+			return thePoints;
+		}
+		
+		
+	}
+
+	private ArrayList<ArrayList<Integer>> tryToFindEndHelp(ArrayList<Integer> currentCoord, BufferedImage blackLines, double average, LinkedList<ArrayList<Double>> history, boolean first, ArrayList<ArrayList<Integer>> masterList, ArrayList<Integer> firstPoint, int currentDir, int maxListNumber){ //this is recursive
 		//ends if hits the edge of screen OR can't find colored pixel
 		
 		//current coord is the next point along the edge. searching for the next point
@@ -512,9 +563,11 @@ public class Main {
 		int nextX = -1;
 		int nextY = -1;
 		
-		int maxListNumber = findAllPointsOnShapes(blackLines).size()/80; 
-		if (maxListNumber < 50){
-			maxListNumber = 50;
+		
+		if (first){
+			if (maxListNumber < 50){
+				maxListNumber = 50;
+			}
 		}
 		//System.out.println("how many pixels" + findAllPointsOnShapes(blackLines).size()/80);
 		ArrayList<ArrayList<Integer>> returnME = new ArrayList<ArrayList<Integer>>();
@@ -637,7 +690,7 @@ public class Main {
 			newCoords.add(nextX);
 			newCoords.add(nextY);
 			
-			returnME = tryToFindEndHelp(newCoords, blackLines, average, history, false, masterList, firstPoint, dir);
+			returnME = tryToFindEndHelp(newCoords, blackLines, average, history, false, masterList, firstPoint, dir, maxListNumber);
 			
 			}else if (history.size() > maxListNumber){
 				System.out.println("well shit. size should never exceed max number");
@@ -719,47 +772,6 @@ public class Main {
     		}
 		}
 		return listAll;
-	}
-	
-	private ArrayList<ArrayList<Integer>> findEndpoints(BufferedImage blackLines){
-		//passing him an array list of shapes (arraylists) of points (arraylists)
-		//ArrayList<ArrayList> allPoints = findAllPointsOnShapes(blackLines);
-		//I GO COUNTER CLOCKWISE AROUND, WHITE ON RIGHT FROM POV
-		
-		ArrayList<Integer> firstPoint = new ArrayList<Integer>(); //what i start from
-		ArrayList<ArrayList<Integer>> allEnds = new ArrayList<ArrayList<Integer>>();
-		
-		int picHeight = blackLines.getHeight();
-		int picWidth = blackLines.getWidth();
-		for (int counterY = 0; counterY < (picHeight) ; counterY += 1){
-    		for (int counterX = 0; counterX < (picWidth) ; counterX += 1){
-    			int originalColor;
-    			originalColor = blackLines.getRGB(counterX, counterY);
-        		Color myColor = new Color(originalColor);
-        		if (myColor.equals(Color.RED)){
-        			firstPoint.add(counterX);
-        			firstPoint.add(counterY);
-        			break;
-        		}
-        		
-    		}
-		}if (firstPoint.size() == 0){ //this means there is not a shape!!
-			System.out.println("not a shape...");
-			return null;
-			
-		}else{
-			//ArrayList<ArrayList<Integer>> thePoints = tryToFindEndHelp(firstPoint, blackLines, 0.0, new LinkedList<ArrayList<Double>>(), true, new ArrayList<ArrayList<Integer>>(), firstPoint);
-			firstPoint.remove(0);
-			firstPoint.remove(0);
-			firstPoint.add(234);
-			firstPoint.add(200);
-			
-			ArrayList<ArrayList<Integer>> thePoints = tryToFindEndHelp(firstPoint, blackLines, 0.0, new LinkedList<ArrayList<Double>>(), true, new ArrayList<ArrayList<Integer>>(), firstPoint, -1);
-			System.out.println("thePoints size is: " + thePoints.size());
-			thePoints = endPointPreciser(thePoints, blackLines);
-			return thePoints;
-		}
-		
 	}
 
 	private ArrayList endPointPreciser(ArrayList<ArrayList<Integer>> endPoints, BufferedImage blackLines){
