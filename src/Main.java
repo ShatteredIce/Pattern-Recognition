@@ -31,6 +31,9 @@ public class Main {
 		
 		BufferedImage test = loadImage("./res/raw/" + shapeName + "." + type);
 		
+		
+		Scanner myScanner = new Scanner(System.in);
+		myScanner.nextLine();
 		//System.out.print("it is real: " + realORfake(test));
 		System.out.println("hi");
 		
