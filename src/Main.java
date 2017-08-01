@@ -479,7 +479,8 @@ public class Main {
 			firstPoint.add(200);
 			
 			*/
-			ArrayList<ArrayList<Integer>> thePoints = tryToFindEndHelp(firstPoint, blackLines, 0.0, new LinkedList<ArrayList<Double>>(), true, new ArrayList<ArrayList<Integer>>(), firstPoint, -1);
+			int maxListNumber = findAllPointsOnShapes(blackLines).size()/80; 
+			ArrayList<ArrayList<Integer>> thePoints = tryToFindEndHelp(firstPoint, blackLines, 0.0, new LinkedList<ArrayList<Double>>(), true, new ArrayList<ArrayList<Integer>>(), firstPoint, -1, maxListNumber);
 			System.out.println("thePoints size is: " + thePoints.size());
 			thePoints = endPointPreciser(thePoints, blackLines);
 			return thePoints;
@@ -488,7 +489,7 @@ public class Main {
 		
 	}
 
-	private ArrayList<ArrayList<Integer>> tryToFindEndHelp(ArrayList<Integer> currentCoord, BufferedImage blackLines, double average, LinkedList<ArrayList<Double>> history, boolean first, ArrayList<ArrayList<Integer>> masterList, ArrayList<Integer> firstPoint, int currentDir){ //this is recursive
+	private ArrayList<ArrayList<Integer>> tryToFindEndHelp(ArrayList<Integer> currentCoord, BufferedImage blackLines, double average, LinkedList<ArrayList<Double>> history, boolean first, ArrayList<ArrayList<Integer>> masterList, ArrayList<Integer> firstPoint, int currentDir, int maxListNumber){ //this is recursive
 		//ends if hits the edge of screen OR can't find colored pixel
 		
 		//current coord is the next point along the edge. searching for the next point
@@ -498,9 +499,11 @@ public class Main {
 		int nextX = -1;
 		int nextY = -1;
 		
-		int maxListNumber = findAllPointsOnShapes(blackLines).size()/80; 
-		if (maxListNumber < 50){
-			maxListNumber = 50;
+		
+		if (first){
+			if (maxListNumber < 50){
+				maxListNumber = 50;
+			}
 		}
 		//System.out.println("how many pixels" + findAllPointsOnShapes(blackLines).size()/80);
 		ArrayList<ArrayList<Integer>> returnME = new ArrayList<ArrayList<Integer>>();
@@ -623,7 +626,7 @@ public class Main {
 			newCoords.add(nextX);
 			newCoords.add(nextY);
 			
-			returnME = tryToFindEndHelp(newCoords, blackLines, average, history, false, masterList, firstPoint, dir);
+			returnME = tryToFindEndHelp(newCoords, blackLines, average, history, false, masterList, firstPoint, dir, maxListNumber);
 			
 			}else if (history.size() > maxListNumber){
 				System.out.println("well shit. size should never exceed max number");
