@@ -1,4 +1,3 @@
-//i changed it!!
 import java.awt.Color;
 import java.util.Collections;
 import java.awt.image.BufferedImage;
