@@ -31,7 +31,7 @@ public class Main implements ActionListener {
 	
 	final Color slimeTrailColor = new Color(255, 0, 0);
 	final Color endPointColor = new Color(0, 255, 0);
-	ArrayList<ArrayList<Integer>> endpoints = new ArrayList<>();
+	ArrayList<ArrayList<Integer>> endpoints = null;
 	
 	//set up GUI
 	JFrame frame = new JFrame("Shapes");
@@ -184,40 +184,47 @@ public class Main implements ActionListener {
 	@Override
 	public void actionPerformed(ActionEvent event) {
 		if(event.getSource().equals(loadfile)){
-			slimeTrail.clear();
-			if(endpoints != null){
-				endpoints.clear();
-			}
 			BufferedImage raw = loadImage("./res/raw/" + filename.getText());
-			BufferedImage outline = checkEdges(findEdges(raw));
-			BufferedImage processed = highlightShape(outline, raw);
-			endpoints = findEndpoints(outline);
-			//display slime trail as outline
-			for (int k = 0; k < slimeTrail.size(); k += 1){
-				outline.setRGB(slimeTrail.get(k).get(0), slimeTrail.get(k).get(1), slimeTrailColor.getRGB());
-				processed.setRGB(slimeTrail.get(k).get(0), slimeTrail.get(k).get(1), slimeTrailColor.getRGB());
-			}
-			//display endpoints as dots
-			if(endpoints != null){
-				for (int i = 0; i < endpoints.size(); i ++){
-					ArrayList<Integer> temp = endpoints.get(i);
-					int endpointWidth = 1;
-					for (int j = -endpointWidth; j <= endpointWidth; j++) {
-						for (int k = -endpointWidth; k <= endpointWidth; k++) {
-							outline.setRGB((int)temp.get(0)+j, (int)temp.get(1)+k, endPointColor.getRGB());
-							processed.setRGB((int)temp.get(0)+j, (int)temp.get(1)+k, endPointColor.getRGB());
-							if (i == endpoints.size() -1){
-								//shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(255,255,255)).getRGB());
+			if(raw != null){
+				slimeTrail.clear();
+				if(endpoints != null){
+					endpoints.clear();
+				}
+				BufferedImage outline = checkEdges(findEdges(raw));
+				BufferedImage processed = highlightShape(outline, raw);
+				endpoints = findEndpoints(outline);
+				//display slime trail as outline
+				for (int k = 0; k < slimeTrail.size(); k += 1){
+					outline.setRGB(slimeTrail.get(k).get(0), slimeTrail.get(k).get(1), slimeTrailColor.getRGB());
+					processed.setRGB(slimeTrail.get(k).get(0), slimeTrail.get(k).get(1), slimeTrailColor.getRGB());
+				}
+				//display endpoints as dots
+				if(endpoints != null){
+					for (int i = 0; i < endpoints.size(); i ++){
+						ArrayList<Integer> temp = endpoints.get(i);
+						int endpointWidth = 1;
+						for (int j = -endpointWidth; j <= endpointWidth; j++) {
+							for (int k = -endpointWidth; k <= endpointWidth; k++) {
+								outline.setRGB((int)temp.get(0)+j, (int)temp.get(1)+k, endPointColor.getRGB());
+								processed.setRGB((int)temp.get(0)+j, (int)temp.get(1)+k, endPointColor.getRGB());
+								if (i == endpoints.size() -1){
+									//shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(255,255,255)).getRGB());
+								}
 							}
 						}
+						System.out.println("X:" + temp.get(0) + " Y: " + temp.get(1));
 					}
-					System.out.println("X:" + temp.get(0) + " Y: " + temp.get(1));
 				}
+				panel.setImages(raw, outline, processed);
+				frame.repaint();
 			}
-			panel.setImages(raw, outline, processed);
-			frame.repaint();
+			else{
+				endpoints = null;
+				System.out.println("test2");
+			}
 		}
 		else if(event.getSource().equals(calculate)){
+			//if endpoints were found
 			if(endpoints != null){
 				ArrayList<ArrayList<ArrayList<Integer>>> myList = new ArrayList<ArrayList<ArrayList<Integer>>>();
 				myList.add(endpoints);
@@ -720,7 +727,6 @@ public class Main implements ActionListener {
 			return null;
 			
 		}else{
-			System.out.println("test");
 			//ArrayList<ArrayList<Integer>> thePoints = tryToFindEndHelp(firstPoint, blackLines, 0.0, new LinkedList<ArrayList<Double>>(), true, new ArrayList<ArrayList<Integer>>(), firstPoint);
 			/*firstPoint.remove(0);
 			firstPoint.remove(0);
