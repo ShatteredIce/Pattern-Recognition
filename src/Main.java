@@ -1,7 +1,16 @@
 import java.util.LinkedList;
+import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Container;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.text.spi.NumberFormatProvider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -9,8 +18,12 @@ import java.util.LinkedList;
 import java.util.Random;
 import java.util.Scanner;
 import javax.imageio.ImageIO;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JTextField;
 
-public class Main {
+public class Main implements ActionListener {
 
 	final int colorThreshold = 50;
 	final int neighborMinThreshold = 5;
@@ -23,37 +36,178 @@ public class Main {
 	
 	final Color slimeTrailColor = new Color(255, 0, 0);
 	final Color endPointColor = new Color(0, 255, 0);
+	ArrayList<ArrayList<Integer>> endpoints = new ArrayList<>();
+	
+	//set up GUI
+	JFrame frame = new JFrame("Shapes");
+	//north container
+	Container north = new Container();
+	JLabel filenameLabel = new JLabel(" File Name: ");
+	JTextField filename = new JTextField();
+	//center container
+	Container center = new Container();
+	ImagePanel panel = new ImagePanel();
+	JButton imgButton1 = new JButton("Raw");
+	JButton imgButton2 = new JButton("Outline");
+	JButton imgButton3 = new JButton("Processed");
+	//east container
+	Container east = new Container();
+	JButton calculate = new JButton("Calculate");
+	JButton loadfile = new JButton("Load");
+	JButton savefile = new JButton("Save");
+	JLabel pointsLabel = new JLabel("Number of Points: ");
+	JLabel ratioLabel = new JLabel("Width/Height Ratio: ");
+	JLabel stddevLabel = new JLabel("Angle Std Dev: ");
+	JLabel anglesLabel = new JLabel("Angle Average: ");
+	JLabel tempLabel = new JLabel("Temp: ");
+	
 	
 	public Main(){
-		String shapeName = "triangle7";
-		String type = "png";
 		
-		BufferedImage input = loadImage("./res/raw/" + shapeName + "." + type);
-//		ArrayList<BufferedImage> tests = cropToBlock(convertGrayscale(input));
-		ArrayList<BufferedImage> tests = new ArrayList<>();
-		tests.add(input);
-//		BufferedImage test = convertGrayscale(best);
-		int index = -1;
-		for(BufferedImage test : tests) {
-			index ++;
-			BufferedImage shape = highlightShape(checkEdges(findEdges((test))), test);
-			//storeImage(shape, "./res/processed/" + shapeName + "_out.png");
-			System.out.println("finished highlighting shape");
-			
-			ArrayList<ArrayList<Integer>> endpoints = findEndpoints(checkEdges(findEdges(test)));
-			System.out.println("the list size is: " + endpoints.size());
-			
-			//display slime trail as red outline
+		//Frame setup
+		frame.setSize(900, 600);
+		frame.setLayout(new BorderLayout());
+		frame.add(north, BorderLayout.NORTH);
+		frame.add(center, BorderLayout.CENTER);
+		frame.add(east, BorderLayout.EAST);
+		
+		//set north layout
+		north.setLayout(new GridBagLayout());
+		GridBagConstraints c = new GridBagConstraints();
+		c.anchor = GridBagConstraints.LINE_START;
+		c.fill = GridBagConstraints.BOTH;
+		c = setGridBagConstraints(c, 0, 0, 0, 0, 0, 0);
+		north.add(filenameLabel, c);
+		c = setGridBagConstraints(c, 1, 0, 0, 20, 1, 0);
+		north.add(filename, c);
+		
+		//set center layout
+		center.setLayout(new GridBagLayout());
+		c.anchor = GridBagConstraints.LINE_START;
+		c.fill = GridBagConstraints.BOTH;
+		c.gridwidth = 3;
+		c = setGridBagConstraints(c, 0, 0, 0, 0, 1, 1);
+		center.add(panel, c);
+		c.fill = GridBagConstraints.BOTH;
+		c.gridwidth = 1;
+		c = setGridBagConstraints(c, 0, 1, 0, 0, 0.2, 0);
+		center.add(imgButton1, c);	
+		imgButton1.addActionListener(this);
+		c = setGridBagConstraints(c, 1, 1, 0, 0, 0.2, 0);
+		center.add(imgButton2, c);
+		imgButton2.addActionListener(this);
+		c = setGridBagConstraints(c, 2, 1, 0, 0, 0.2, 0);
+		center.add(imgButton3, c);
+		imgButton3.addActionListener(this);
+		
+		//set east layout
+		east.setLayout(new GridBagLayout());
+		c.anchor = GridBagConstraints.LINE_START;
+		c.fill = GridBagConstraints.NONE;
+		c = setGridBagConstraints(c, 0, 0, 20, 20, 0, 0);
+		east.add(loadfile, c);
+		loadfile.addActionListener(this);
+		c = setGridBagConstraints(c, 1, 0, 10, 20, 0, 0);
+		east.add(calculate, c);
+		calculate.addActionListener(this);
+		c = setGridBagConstraints(c, 2, 0, 20, 20, 0, 0);
+		east.add(savefile, c);
+		savefile.addActionListener(this);
+		c.gridwidth = 3;
+		c = setGridBagConstraints(c, 0, 1, 0, 0, 0, 0.1);
+		east.add(pointsLabel, c);
+		c = setGridBagConstraints(c, 0, 2, 0, 0, 0, 0.1);
+		east.add(ratioLabel, c);
+		c = setGridBagConstraints(c, 0, 3, 0, 0, 0, 0.1);
+		east.add(stddevLabel, c);
+		c = setGridBagConstraints(c, 0, 4, 0, 0, 0, 0.1);
+		east.add(anglesLabel, c);
+		c = setGridBagConstraints(c, 0, 5, 0, 0, 0, 2);
+		east.add(tempLabel, c);
+		
+		
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setVisible(true);
+		
+		
+//		String shapeName = "triangle9";
+//		String type = "png";
+//
+//				
+//		BufferedImage input = loadImage("./res/raw/" + shapeName + "." + type);
+////		ArrayList<BufferedImage> tests = cropToBlock(convertGrayscale(input));
+//		ArrayList<BufferedImage> tests = new ArrayList<>();
+//		tests.add(input);
+////		BufferedImage test = convertGrayscale(best);
+//		int index = -1;
+//		for(BufferedImage test : tests) {
+//			index ++;
+//			BufferedImage shape = highlightShape(checkEdges(findEdges((test))), test);
+//			//storeImage(shape, "./res/processed/" + shapeName + "_out.png");
+//			System.out.println("finished highlighting shape");
+//			
+//			ArrayList<ArrayList<Integer>> endpoints = findEndpoints(checkEdges(findEdges(test)));
+//			System.out.println("the list size is: " + endpoints.size());
+//			
+//			//display slime trail as red outline
+//			for (int k = 0; k < slimeTrail.size(); k += 1){
+//				shape.setRGB(slimeTrail.get(k).get(0), slimeTrail.get(k).get(1), slimeTrailColor.getRGB());
+//			}
+//			//storeImage(shape, "./res/processed/" + shapeName + "_out.png");
+//			//display endpoints as green dots
+//			for (int i = 0; i < endpoints.size(); i ++){
+//				ArrayList temp = endpoints.get(i);
+//				for (int j = -2; j < 2; j ++) {
+//					for (int k = -2; k < 2; k ++) {
+//						shape.setRGB((int)temp.get(0), (int)temp.get(1), endPointColor.getRGB());
+//						if (i == endpoints.size() -1){
+//							//shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(255,255,255)).getRGB());
+//						}
+//					}
+//				}
+//				System.out.println("X:" + temp.get(0) + " Y: " + temp.get(1));
+//			}
+//			storeImage(shape, "./res/processed/" + shapeName + "_out.png");
+//			ArrayList<ArrayList<ArrayList<Integer>>> myList = new ArrayList<ArrayList<ArrayList<Integer>>>();
+//			myList.add(endpoints);
+//			
+//			Double[][] my = processShape(myList);
+//			for (Double[] value: my){
+//				for (Double actualValue : value){
+//					System.out.println(actualValue);
+//				}
+//			}
+//			
+//		}
+		
+	}
+
+	public static void main(String[] args) {
+		new Main();
+	}
+	
+	@Override
+	public void actionPerformed(ActionEvent event) {
+		if(event.getSource().equals(loadfile)){
+			slimeTrail.clear();
+			endpoints.clear();
+			BufferedImage raw = loadImage("./res/raw/" + filename.getText());
+			BufferedImage outline = checkEdges(findEdges(raw));
+			BufferedImage processed = highlightShape(outline, raw);
+			endpoints = findEndpoints(outline);
+			//display slime trail as outline
 			for (int k = 0; k < slimeTrail.size(); k += 1){
-				shape.setRGB(slimeTrail.get(k).get(0), slimeTrail.get(k).get(1), slimeTrailColor.getRGB());
+				outline.setRGB(slimeTrail.get(k).get(0), slimeTrail.get(k).get(1), slimeTrailColor.getRGB());
+				processed.setRGB(slimeTrail.get(k).get(0), slimeTrail.get(k).get(1), slimeTrailColor.getRGB());
 			}
-			//storeImage(shape, "./res/processed/" + shapeName + "_out.png");
-			//display endpoints as green dots
+			//display endpoints as dots
 			for (int i = 0; i < endpoints.size(); i ++){
-				ArrayList temp = endpoints.get(i);
-				for (int j = -2; j < 2; j ++) {
-					for (int k = -2; k < 2; k ++) {
-						shape.setRGB((int)temp.get(0), (int)temp.get(1), endPointColor.getRGB());
+				ArrayList<Integer> temp = endpoints.get(i);
+				int endpointWidth = 1;
+				for (int j = -endpointWidth; j <= endpointWidth; j++) {
+					for (int k = -endpointWidth; k <= endpointWidth; k++) {
+						outline.setRGB((int)temp.get(0)+j, (int)temp.get(1)+k, endPointColor.getRGB());
+						processed.setRGB((int)temp.get(0)+j, (int)temp.get(1)+k, endPointColor.getRGB());
 						if (i == endpoints.size() -1){
 							//shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(255,255,255)).getRGB());
 						}
@@ -61,22 +215,51 @@ public class Main {
 				}
 				System.out.println("X:" + temp.get(0) + " Y: " + temp.get(1));
 			}
-			storeImage(shape, "./res/processed/" + shapeName + "_out.png");
+			panel.setImages(raw, outline, processed);
+			frame.repaint();
+		}
+		else if(event.getSource().equals(calculate)){
 			ArrayList<ArrayList<ArrayList<Integer>>> myList = new ArrayList<ArrayList<ArrayList<Integer>>>();
 			myList.add(endpoints);
 			
 			Double[][] my = processShape(myList);
 			for (Double[] value: my){
+				pointsLabel.setText("Number of Points: " + value[0]);
+				ratioLabel.setText("Width/Height Ratio: " + value[1]);
+				stddevLabel.setText("Angle Std Dev: " + value[2]);
+				anglesLabel.setText("Angle Average: " + value[3]);
 				for (Double actualValue : value){
 					System.out.println(actualValue);
 				}
 			}
-			
+		}
+		else if(event.getSource().equals(savefile)){
+			if(panel.getCurrentImage() != null){
+				storeImage(panel.getCurrentImage(), "./res/processed/savedimage.png");
+			}
+		}
+		else if(event.getSource().equals(imgButton1)){
+			panel.setImgType(0);
+			frame.repaint();
+		}
+		else if(event.getSource().equals(imgButton2)){
+			panel.setImgType(1);
+			frame.repaint();
+		}
+		else if(event.getSource().equals(imgButton3)){
+			panel.setImgType(2);
+			frame.repaint();
 		}
 	}
-
-	public static void main(String[] args) {
-		new Main();
+	
+	public GridBagConstraints setGridBagConstraints(GridBagConstraints c, int x, int y, int xpad, int ypad, double xweight, double yweight){
+		c.gridx = x;
+		c.gridy = y;
+		c.ipadx = xpad;
+		c.ipady = ypad;
+		c.weightx = xweight;
+		c.weighty = yweight;
+		return c;
 	}
 	
 	private BufferedImage loadImage(String path) {
@@ -91,6 +274,7 @@ public class Main {
 			return null;
 		}
 	}
+	
 	private void storeImage(BufferedImage image, String path) {
 		File out = new File(path);
 		try {
