@@ -6,14 +6,14 @@ public class Neuron {
 	static Random random = new Random();
 	
 	int numInputs;
-	final double rate = 0.001;
+	final double rate = 0.001; //learning rate
 	
 	double[] inputs;
 	double[] weights;
 	double lastOutput;
 	double[] previousWeightDeltas;
-	double biasWeight = -1;
-	double momentumWeight = 0;
+	double biasWeight = -1; //bias
+	double momentumWeight = 0; //momentum
 	
 	public Neuron(int newInputs){
 		numInputs = newInputs;
@@ -26,6 +26,7 @@ public class Neuron {
 		}	
 	}
 	
+	//set the inputs of the neuron
 	public void setInputs(double[] data){
 		for (int i = 0; i < inputs.length; i++) {
 			inputs[i] = data[i];
@@ -33,6 +34,7 @@ public class Neuron {
 		}
 	}
 	
+	//calculate the output of the neuron
 	public double calculateOutput(){
 		double total = 0;
 		for(int i = 0; i < numInputs; i++){
@@ -45,6 +47,7 @@ public class Neuron {
 		return total;
 	}
 	
+	//return the error of the neuron for backpropagation
 	public double updateErrorLastLayer(double trueValue, double error){
 		double residual = trueValue - lastOutput;
 		error += residual * (lastOutput * (1 - lastOutput));
@@ -82,6 +85,7 @@ public class Neuron {
 		return truevalue - lastOutput;
 	}
 	
+	//update the weights of the neuron based on its contribution to the output
 	public double[] updateWeights(double contribution){
 		double error = contribution * (lastOutput * (1 - lastOutput));
 		
@@ -109,6 +113,7 @@ public class Neuron {
 		return (1/ (1 + Math.exp(-x)));
 	}
 	
+	//print current weights of the neuron
 	public void printWeights(){
 		for (int i = 0; i < weights.length; i++) {
 			System.out.println(weights[i]);

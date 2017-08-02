@@ -9,10 +9,12 @@ public class NeuralNetwork {
 	ArrayList<Neuron[]> layers = new ArrayList<>();
 	
 	double[][] trainingData = {{3, 0.863, 0.007, 1.047}, {3, 1.158, 0.003, 1.047}, {3, 1.571, 0.201, 1.047}, 
-		{3, 0.864, 0.005, 1.047}, {4, 1, 0.002, 1.571}, {4, 1, 0.002, 1.571}, {4, 3.075, 0.009, 1.571}, {4, 0.841, 0.004, 1.571}}; 
+		{3, 0.864, 0.005, 1.047}, {3, 1.366, 0.404, 1.047}, {3, 1.988, 0.432, 1.047}, {4, 1, 0.002, 1.571}, {4, 1, 0.002, 1.571},
+		{4, 3.075, 0.009, 1.571}, {4, 0.841, 0.004, 1.571}, {4, 0.821, 0.004, 1.571}}; 
 	
 	//triangle, square, rectangle
-	double[][] trainingAnswers = {{1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {0, 1, 0}, {0, 1, 0}, {0, 0, 1}, {0, 0, 1}};
+	double[][] trainingAnswers = {{1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {1, 0, 0}, 
+			{0, 1, 0}, {0, 1, 0}, {0, 0, 1}, {0, 0, 1}, {0, 0, 1}};
 	
 	
 //	final int trainingSetSize = 100;
@@ -71,6 +73,7 @@ public class NeuralNetwork {
 		displayResult(true);
 	}
 	
+	//train the neural net using the training data
 	public void train(int trainingIndex){
 		int lastLayer = layers.size() - 1;
 		double[][] lastLayerContribution = new double[layers.get(lastLayer).length][];
@@ -105,6 +108,7 @@ public class NeuralNetwork {
 		
 	}
 	
+	//calculate the output of the neural net
 	public double[] calculate(double[] data){
 		double[] layerOutput = null;
 		for(int i = 0; i < layers.size(); i++){
@@ -127,6 +131,7 @@ public class NeuralNetwork {
 		return layerOutput;
 	}
 	
+	//print out the result from the last layer of neurons
 	public void displayResult(boolean formatted){
 		int lastLayer = layers.size() - 1;
 		System.out.println("Last Layer Results: ");
@@ -143,6 +148,7 @@ public class NeuralNetwork {
 		System.out.println();
 	}
 	
+	//print out weights of each neuron in the network
 	public void displayWeights(){
 		for (int i = 0; i < layers.size(); i++) {
 			for (int j = 0; j < layers.get(i).length; j++) {
