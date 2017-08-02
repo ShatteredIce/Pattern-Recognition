@@ -4,13 +4,10 @@ import java.awt.Color;
 import java.awt.Container;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.text.spi.NumberFormatProvider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,9 +22,7 @@ import javax.swing.JTextField;
 
 public class Main implements ActionListener {
 
-	final int colorThreshold = 50;
-	final int neighborMinThreshold = 5;
-	final int neighborMaxThreshold = 25;
+	final int colorThreshold = 400;
 	final int blockThresh = 22;
 	final int differentiator = 2;
 	final int spaceAroundCrop = 25;
@@ -130,7 +125,7 @@ public class Main implements ActionListener {
 		frame.setVisible(true);
 		
 		
-//		String shapeName = "triangle9";
+//		String shapeName = "triangle4";
 //		String type = "png";
 //
 //				
@@ -143,7 +138,7 @@ public class Main implements ActionListener {
 //		for(BufferedImage test : tests) {
 //			index ++;
 //			BufferedImage shape = highlightShape(checkEdges(findEdges((test))), test);
-//			//storeImage(shape, "./res/processed/" + shapeName + "_out.png");
+//		storeImage(findEdges(input), "./res/processed/" + shapeName + "_out.png");
 //			System.out.println("finished highlighting shape");
 //			
 //			ArrayList<ArrayList<Integer>> endpoints = findEndpoints(checkEdges(findEdges(test)));
@@ -190,7 +185,9 @@ public class Main implements ActionListener {
 	public void actionPerformed(ActionEvent event) {
 		if(event.getSource().equals(loadfile)){
 			slimeTrail.clear();
-			endpoints.clear();
+			if(endpoints != null){
+				endpoints.clear();
+			}
 			BufferedImage raw = loadImage("./res/raw/" + filename.getText());
 			BufferedImage outline = checkEdges(findEdges(raw));
 			BufferedImage processed = highlightShape(outline, raw);
@@ -201,36 +198,46 @@ public class Main implements ActionListener {
 				processed.setRGB(slimeTrail.get(k).get(0), slimeTrail.get(k).get(1), slimeTrailColor.getRGB());
 			}
 			//display endpoints as dots
-			for (int i = 0; i < endpoints.size(); i ++){
-				ArrayList<Integer> temp = endpoints.get(i);
-				int endpointWidth = 1;
-				for (int j = -endpointWidth; j <= endpointWidth; j++) {
-					for (int k = -endpointWidth; k <= endpointWidth; k++) {
-						outline.setRGB((int)temp.get(0)+j, (int)temp.get(1)+k, endPointColor.getRGB());
-						processed.setRGB((int)temp.get(0)+j, (int)temp.get(1)+k, endPointColor.getRGB());
-						if (i == endpoints.size() -1){
-							//shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(255,255,255)).getRGB());
+			if(endpoints != null){
+				for (int i = 0; i < endpoints.size(); i ++){
+					ArrayList<Integer> temp = endpoints.get(i);
+					int endpointWidth = 1;
+					for (int j = -endpointWidth; j <= endpointWidth; j++) {
+						for (int k = -endpointWidth; k <= endpointWidth; k++) {
+							outline.setRGB((int)temp.get(0)+j, (int)temp.get(1)+k, endPointColor.getRGB());
+							processed.setRGB((int)temp.get(0)+j, (int)temp.get(1)+k, endPointColor.getRGB());
+							if (i == endpoints.size() -1){
+								//shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(255,255,255)).getRGB());
+							}
 						}
 					}
+					System.out.println("X:" + temp.get(0) + " Y: " + temp.get(1));
 				}
-				System.out.println("X:" + temp.get(0) + " Y: " + temp.get(1));
 			}
 			panel.setImages(raw, outline, processed);
 			frame.repaint();
 		}
 		else if(event.getSource().equals(calculate)){
-			ArrayList<ArrayList<ArrayList<Integer>>> myList = new ArrayList<ArrayList<ArrayList<Integer>>>();
-			myList.add(endpoints);
+			if(endpoints != null){
+				ArrayList<ArrayList<ArrayList<Integer>>> myList = new ArrayList<ArrayList<ArrayList<Integer>>>();
+				myList.add(endpoints);
 			
-			Double[][] my = processShape(myList);
-			for (Double[] value: my){
-				pointsLabel.setText("Number of Points: " + value[0]);
-				ratioLabel.setText("Width/Height Ratio: " + value[1]);
-				stddevLabel.setText("Angle Std Dev: " + value[2]);
-				anglesLabel.setText("Angle Average: " + value[3]);
-				for (Double actualValue : value){
-					System.out.println(actualValue);
+				Double[][] my = processShape(myList);
+				for (Double[] value: my){
+					pointsLabel.setText("Number of Points: " + value[0]);
+					ratioLabel.setText("Width/Height Ratio: " + value[1]);
+					stddevLabel.setText("Angle Std Dev: " + value[2]);
+					anglesLabel.setText("Angle Average: " + value[3]);
+					for (Double actualValue : value){
+						System.out.println(actualValue);
+					}
 				}
+			}
+			else{
+				pointsLabel.setText("Number of Points: ");
+				ratioLabel.setText("Width/Height Ratio: ");
+				stddevLabel.setText("Angle Std Dev: ");
+				anglesLabel.setText("Angle Average: ");
 			}
 		}
 		else if(event.getSource().equals(savefile)){
@@ -406,17 +413,15 @@ public class Main implements ActionListener {
 		BufferedImage convertedImage = new BufferedImage(width, height, img.getType()); 
 		for(int xpos = 2; xpos < width - 2; xpos++){
 			for(int ypos = 2; ypos < height - 2; ypos++){
-				int numSimilar = 0;
+				int totalDifference = 0;
 				for(int i = xpos - 2; i <= xpos + 2; i++){
 					for(int j = ypos - 2; j <= ypos + 2; j++){
 						Color pixel1 = new Color(img.getRGB(xpos, ypos));
 						Color pixel2 = new Color(img.getRGB(i, j));
-						if(checkSimilarity(pixel1, pixel2)){
-							numSimilar++;
+						totalDifference += checkSimilarity(pixel1, pixel2);
 						}
 					}
-				}
-				if(numSimilar > neighborMinThreshold && numSimilar < neighborMaxThreshold){
+				if(totalDifference > colorThreshold){
 					convertedImage.setRGB(xpos, ypos, Color.RED.getRGB());
 				}
 				else{
@@ -454,7 +459,7 @@ public class Main implements ActionListener {
 	}
 	
 	
-	private boolean checkSimilarity(Color pixel1, Color pixel2){
+	private double checkSimilarity(Color pixel1, Color pixel2){
 		int red1 = pixel1.getRed();
 		int green1 = pixel1.getGreen();
 		int blue1 = pixel1.getBlue();
@@ -462,12 +467,7 @@ public class Main implements ActionListener {
 		int green2 = pixel2.getGreen();
 		int blue2 = pixel2.getBlue();
 		double difference = Math.sqrt(Math.pow(red1 - red2, 2) + Math.pow(green1 - green2, 2) + Math.pow(blue1 - blue2, 2));
-		if(difference > colorThreshold){
-			return true;
-		}
-		else{
-			return false;
-		}
+		return difference;
 	}
 	
 	//Nested Arraylists: Shape >> Endpoints >> X,Y
@@ -720,6 +720,7 @@ public class Main implements ActionListener {
 			return null;
 			
 		}else{
+			System.out.println("test");
 			//ArrayList<ArrayList<Integer>> thePoints = tryToFindEndHelp(firstPoint, blackLines, 0.0, new LinkedList<ArrayList<Double>>(), true, new ArrayList<ArrayList<Integer>>(), firstPoint);
 			/*firstPoint.remove(0);
 			firstPoint.remove(0);
