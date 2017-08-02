@@ -26,7 +26,7 @@ public class Main {
 	
 	public Main(){
 		//problem with real vs fake...
-		String shapeName = "square";
+		String shapeName = "star";
 		String type = "png";
 		
 		BufferedImage test = loadImage("./res/raw/" + shapeName + "." + type);
@@ -499,7 +499,7 @@ public class Main {
 		int nextX = -1;
 		int nextY = -1;
 		
-		
+		maxListNumber = 50;
 		if (first){
 			if (maxListNumber < 50){
 				maxListNumber = 50;
@@ -580,41 +580,47 @@ public class Main {
 			return masterList; // this is my base case
 			
 		}else if (nextX >= 0){ //means has been changed, since coords are not negative
+			boolean restart = false;
 			ArrayList<Integer> newCoords = new ArrayList<Integer>();
 			ArrayList<Double> bundledHist = new ArrayList<Double>(); //order is average, x, y
-			double slope = (double)(y - nextY) / (x - nextX); //find the slope in a double 
-			if (first){ //find / change the running average -- use boolean "first"
-				average = slope;
+			
+			if (history.size() > 3){
+				double slope = (double)(history.get(history.size()-3).get(2) - nextY) / (history.get(history.size()-3).get(1) - nextX); //find the slope in a double 
+				if (history.get(history.size()-3).get(1) - nextX == 0){
+					slope = 1000000000000.0;
+				}
+				if (first){ //find / change the running average -- use boolean "first"
+					average = slope;
+				}else{
+					average += slope;
+					average = average/2;
+				}
 			}else{
-				average += slope;
-				average = average/2;
+				average = 0.0; //does this matter??
 			}
+			
 			//if linked list is len odd, and delete from front each time add to back.. compare slope to first element in linked list
 			if (history.size() > maxListNumber){
 				System.out.println("you erred. please relook your code not in a rage. or, there is no shape so please relook the data");
 				//should i return null meaning no polygon, or return the found verticees
 			}else if (history.size() == maxListNumber){
-				ArrayList<Double> passME = new ArrayList<Double>();
-				for (int i = 1; i < history.size(); i += 1){
-					passME.add(history.get(i).get(3));
-				}
 				//System.out.println("im outside the if statement");
-				if (!(patternMatch(passME, dir))){//compare current slope average to this one, kinda
-					ArrayList<Integer> corner = new ArrayList<Integer>(); //the guessed corner, last point in history
-		
+				if (!(slopeMatch(history))){//compare current slope average to this one, kinda
+					
+					ArrayList<Integer> corner = new ArrayList<Integer>(); //the guessed corner, the next point
 					corner.add(nextX);
-					corner.add(nextY);
+					corner.add(nextY); 
 					masterList.add(corner);
 					
-					//this loop is so it doesnt detect the end of the corner (:
-					int thisManyToDelete = history.size()/2; 
-					while(thisManyToDelete > 0){
-						history.removeFirst();
-						thisManyToDelete -= 1;
-					}
+					history = new LinkedList<ArrayList<Double>>();
+					restart = true;
 				}else{
 					history.removeFirst();
 				}
+			}
+			
+			if (history.size() < 4){
+				restart = true;
 			}
 			//if they are the same
 			bundledHist.add(average);
@@ -626,7 +632,7 @@ public class Main {
 			newCoords.add(nextX);
 			newCoords.add(nextY);
 			
-			returnME = tryToFindEndHelp(newCoords, blackLines, average, history, false, masterList, firstPoint, dir, maxListNumber);
+			returnME = tryToFindEndHelp(newCoords, blackLines, average, history, restart, masterList, firstPoint, dir, maxListNumber);
 			
 			}else if (history.size() > maxListNumber){
 				System.out.println("well shit. size should never exceed max number");
@@ -637,6 +643,42 @@ public class Main {
 		//System.out.println("returnME's size is " + returnME.size());
 		return returnME;
 		
+	}
+	
+	
+	private boolean slopeMatch (LinkedList<ArrayList<Double>> averages){
+		boolean slopeMatch = false; //what i will return. false if slope doesnt match meaning corner
+		double nowAverage = 0; //this is the average slope of the last 10
+		int sensitivity = -5;
+		int checkBack = 4; //in normal this is 2
+		for (int i = sensitivity; i <0; i +=1){ //goes thru and finds slope of the last 10
+			double thisSlope = (averages.get(averages.size()- 1 + i).get(2) - averages.get(averages.size()- checkBack + i).get(2))/(averages.get(averages.size()- 1 + i).get(1) - averages.get(averages.size()- 2 + i).get(1)) ;
+			if ((averages.get(averages.size()- 1 + i).get(1) - averages.get(averages.size()- 2 + i).get(1)) == 0){
+				thisSlope = 1000000000000.0;
+			}
+			if (i == 0){
+				nowAverage = thisSlope;
+			}else{
+				nowAverage += thisSlope;
+				nowAverage = nowAverage/2;
+			}
+		}
+		double oldAverage = averages.get(averages.size() - checkBack + sensitivity).get(0);
+		if (oldAverage == nowAverage){
+			slopeMatch = true;
+		}else if (oldAverage != 0){
+			if (Math.abs(nowAverage / oldAverage) < 1.25 && Math.abs(nowAverage / oldAverage) > .75 ){
+				slopeMatch = true;
+			}
+		}else if (nowAverage != 0){
+			if (Math.abs(oldAverage/nowAverage) < 1.25 && Math.abs(oldAverage/nowAverage) > .75){
+				slopeMatch = true;
+			}
+		}
+		if (slopeMatch == false){
+			System.out.println("the old slope is " + oldAverage + ", the new slope is " + nowAverage);
+		}
+		return slopeMatch;
 	}
 	
 	private boolean patternMatch (ArrayList<Double> pattern, int myDir){
