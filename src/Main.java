@@ -196,14 +196,18 @@ public class Main implements ActionListener {
 	
 	@Override
 	public void actionPerformed(ActionEvent event) {
+		//if load or generate button is clicked, attempt to create images to be processed
 		if(event.getSource().equals(loadfile) || event.getSource().equals(generate)){
 			BufferedImage raw;
+			//load image from /res/raw
 			if(event.getSource().equals(loadfile)){
 				raw = loadImage("./res/raw/" + filename.getText());
 			}
+			//generate image
 			else{
 				raw = generateImage();
 			}
+			//if raw image exists, create images for outline and processed image
 			if(raw != null){
 				slimeTrail.clear();
 				if(endpoints != null){
@@ -235,6 +239,7 @@ public class Main implements ActionListener {
 					}
 				}
 				panel.setImages(raw, outline, processed);
+				//if the auto-calculate checkbox is selected, calculate data
 				if(autocalculate.isSelected()){
 					calculateData();
 				}
@@ -244,28 +249,34 @@ public class Main implements ActionListener {
 				endpoints = null;
 			}
 		}
+		//display processed data of shape
 		else if(event.getSource().equals(calculate)){
 			calculateData();
 		}
+		//save the current displayed image
 		else if(event.getSource().equals(savefile)){
 			if(panel.getCurrentImage() != null){
 				storeImage(panel.getCurrentImage(), "./res/processed/savedimage.png");
 			}
 		}
+		//select the raw image to be displayed
 		else if(event.getSource().equals(imgButton1)){
 			panel.setImgType(0);
 			frame.repaint();
 		}
+		//select the outline image to be displayed
 		else if(event.getSource().equals(imgButton2)){
 			panel.setImgType(1);
 			frame.repaint();
 		}
+		//select the processed image to be displayed
 		else if(event.getSource().equals(imgButton3)){
 			panel.setImgType(2);
 			frame.repaint();
 		}
 	}
 	
+	//set constraints for GUI layout
 	public GridBagConstraints setGridBagConstraints(GridBagConstraints c, int x, int y, int xpad, int ypad, double xweight, double yweight){
 		c.gridx = x;
 		c.gridy = y;
@@ -276,6 +287,7 @@ public class Main implements ActionListener {
 		return c;
 	}
 	
+	//load an image from file path
 	private BufferedImage loadImage(String path) {
 		File in = new File(path);
 		BufferedImage im;
@@ -289,6 +301,7 @@ public class Main implements ActionListener {
 		}
 	}
 	
+	//store an image to the computer
 	private void storeImage(BufferedImage image, String path) {
 		File out = new File(path);
 		try {
@@ -298,6 +311,7 @@ public class Main implements ActionListener {
 		}
 	}
 	
+	//convert an RGB image to grayscale
 	private BufferedImage convertGrayscale(BufferedImage test){
 		//pure image is the one that is greyscaled 
 		int picWidth = test.getWidth();
@@ -322,6 +336,7 @@ public class Main implements ActionListener {
     	return pureImage;
 	}
 	
+	//blur image using mean blur algorithm
 	private BufferedImage blurImage(BufferedImage img){
 		int width = img.getWidth();
 		int height = img.getHeight();
@@ -348,6 +363,7 @@ public class Main implements ActionListener {
 		return convertedImage;
 	}
 	
+	//blur image using gaussian blur algorithm
 	private BufferedImage gaussianBlur(BufferedImage img){
 		double sigma = 1;
 		int radius = 1;
@@ -355,6 +371,7 @@ public class Main implements ActionListener {
 		int height = img.getHeight();
 
 		BufferedImage convertedImage = new BufferedImage(width, height, img.getType()); 
+		//copy edges from original image over to blurred image
 		for (int y = 0; y < height; y++) {
 			for (int x = 0; x < radius; x++) {
 				convertedImage.setRGB(x, y, img.getRGB(x, y));
@@ -371,6 +388,7 @@ public class Main implements ActionListener {
 				convertedImage.setRGB(x, y, img.getRGB(x, y));
 			}
 		}
+		//blur inner pixels
 		for(int xpos = radius; xpos < width - radius; xpos++){
 			for(int ypos = radius; ypos < height - radius; ypos++){
 				double red = 0;
@@ -409,15 +427,17 @@ public class Main implements ActionListener {
 		return convertedImage;
 	}
 
-	
+	//two-dimensional gaussian function
 	private double gaussian(double x, double y, double sigma){
 		return 1/(2*Math.PI*Math.pow(sigma, 2))*Math.exp(-(Math.pow(x, 2) + Math.pow(y, 2))/ 2*Math.pow(sigma, 2));
 	}
 	
+	//finds the edges of the shapes in an image
 	private BufferedImage findEdges(BufferedImage img){
 		int width = img.getWidth();
 		int height = img.getHeight();
 		BufferedImage convertedImage = new BufferedImage(width, height, img.getType()); 
+		//calculates color difference from neighbors for each inner pixel
 		for(int xpos = 2; xpos < width - 2; xpos++){
 			for(int ypos = 2; ypos < height - 2; ypos++){
 				int totalDifference = 0;
@@ -428,6 +448,7 @@ public class Main implements ActionListener {
 						totalDifference += checkSimilarity(pixel1, pixel2);
 						}
 					}
+				//mark the pixel if color difference is greater than specified threshold
 				if(totalDifference > colorThreshold){
 					convertedImage.setRGB(xpos, ypos, Color.RED.getRGB());
 				}
@@ -465,7 +486,7 @@ public class Main implements ActionListener {
 		return highlight;
 	}
 	
-	
+	//compares the RGB values of two pixels
 	private double checkSimilarity(Color pixel1, Color pixel2){
 		int red1 = pixel1.getRed();
 		int green1 = pixel1.getGreen();
@@ -477,9 +498,11 @@ public class Main implements ActionListener {
 		return difference;
 	}
 	
+	//generate an image containing a square or triangle
 	public BufferedImage generateImage(){
 		int imgsize = 300;
 		Polygon p = new Polygon();
+		//possible shape and background colors
 		ArrayList<Color> colors = new ArrayList<>();
 		colors.add(Color.RED);
 		colors.add(Color.BLUE);
@@ -497,12 +520,14 @@ public class Main implements ActionListener {
 		int backgroundColorIndex = random.nextInt(colors.size());
 		while(backgroundColorIndex == shapeColorIndex){ backgroundColorIndex = random.nextInt(colors.size()); }
 		int shapeType = random.nextInt(2);
+		//generate triangle
 		if(shapeType == 0){
 			int numPoints = 3;
 			for (int i = 0; i < numPoints; i++) {
 				p.addPoint(random.nextInt(imgsize + 1), random.nextInt(imgsize + 1));
 			}
 		}
+		//generate square
 		else{
 			int topX = random.nextInt(imgsize + 1);
 			int topY = random.nextInt(imgsize + 1);
@@ -513,6 +538,7 @@ public class Main implements ActionListener {
 			p.addPoint(botX, botY);
 			p.addPoint(botX, topY);
 		}
+		//set color of pixels in new image
 		BufferedImage generatedImage = new BufferedImage(imgsize, imgsize, BufferedImage.TYPE_INT_RGB);
 		for (int x = 0; x < generatedImage.getWidth(); x++) {
 			for (int y = 0; y < generatedImage.getHeight(); y++) {
@@ -529,10 +555,11 @@ public class Main implements ActionListener {
 	}
 	
 	
-	
+	//used to generate random shape data and display it to the console
 	public void generateShapeData(){
 		int numPoints = 3;
 		int upperBound = 200;
+		//generate random points
 		ArrayList<ArrayList<Integer>> shapePoints = new ArrayList<>();
 		for (int i = 0; i < numPoints; i++) {
 			ArrayList<Integer> currentPoint = new ArrayList<>();
@@ -543,6 +570,7 @@ public class Main implements ActionListener {
 		}
 		ArrayList<ArrayList<ArrayList<Integer>>> myList = new ArrayList<ArrayList<ArrayList<Integer>>>();
 		myList.add(shapePoints);
+		//display values: number of points, ratio of width/height, std dev of angles, average of angles
 		Double[] result = processShape(myList)[0];
 		for (int i = 0; i < result.length; i++) {
 			System.out.println(result[i]);
@@ -611,6 +639,7 @@ public class Main implements ActionListener {
 			myList.add(endpoints);
 		
 			Double[][] my = processShape(myList);
+			//display values on GUI labels
 			for (Double[] value: my){
 				pointsLabel.setText("Number of Points: " + value[0]);
 				ratioLabel.setText("Width/Height Ratio: " + value[1]);
@@ -621,6 +650,7 @@ public class Main implements ActionListener {
 				}
 			}
 		}
+		//reset values
 		else{
 			pointsLabel.setText("Number of Points: ");
 			ratioLabel.setText("Width/Height Ratio: ");
