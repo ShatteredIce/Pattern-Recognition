@@ -4,6 +4,7 @@ Our goal is to be able to identify shapes in an image.
 Currently, our program is able to load an image and process some data for the image.
 
 Usability Test:
+Run the program.
 Type filenames into the textfield and click 'load'.
 Click on 'calculate' to display the shape data.
 

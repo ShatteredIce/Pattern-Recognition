@@ -4,18 +4,24 @@ import java.awt.Color;
 import java.awt.Container;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Point;
+import java.awt.Polygon;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Random;
 import java.util.Scanner;
+
+import javax.imageio.IIOException;
 import javax.imageio.ImageIO;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
@@ -51,6 +57,8 @@ public class Main implements ActionListener {
 	JButton calculate = new JButton("Calculate");
 	JButton loadfile = new JButton("Load");
 	JButton savefile = new JButton("Save");
+	JButton generate = new JButton("Generate");
+	JCheckBox autocalculate = new JCheckBox("Auto-Calculate");
 	JLabel pointsLabel = new JLabel("Number of Points: ");
 	JLabel ratioLabel = new JLabel("Width/Height Ratio: ");
 	JLabel stddevLabel = new JLabel("Angle Std Dev: ");
@@ -110,16 +118,21 @@ public class Main implements ActionListener {
 		east.add(savefile, c);
 		savefile.addActionListener(this);
 		c.gridwidth = 3;
-		c = setGridBagConstraints(c, 0, 1, 0, 0, 0, 0.1);
-		east.add(pointsLabel, c);
+		c = setGridBagConstraints(c, 0, 1, 0, 10, 0, 0);
+		east.add(autocalculate, c);
 		c = setGridBagConstraints(c, 0, 2, 0, 0, 0, 0.1);
-		east.add(ratioLabel, c);
+		east.add(pointsLabel, c);
 		c = setGridBagConstraints(c, 0, 3, 0, 0, 0, 0.1);
-		east.add(stddevLabel, c);
+		east.add(ratioLabel, c);
 		c = setGridBagConstraints(c, 0, 4, 0, 0, 0, 0.1);
+		east.add(stddevLabel, c);
+		c = setGridBagConstraints(c, 0, 5, 0, 0, 0, 0.1);
 		east.add(anglesLabel, c);
-		c = setGridBagConstraints(c, 0, 5, 0, 0, 0, 2);
+		c = setGridBagConstraints(c, 0, 6, 0, 0, 0, 2);
 		east.add(tempLabel, c);
+		c = setGridBagConstraints(c, 2, 7, 0, 0, 0, 0);
+		east.add(generate, c);
+		generate.addActionListener(this);
 		
 		
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -186,8 +199,14 @@ public class Main implements ActionListener {
 	
 	@Override
 	public void actionPerformed(ActionEvent event) {
-		if(event.getSource().equals(loadfile)){
-			BufferedImage raw = loadImage("./res/raw/" + filename.getText());
+		if(event.getSource().equals(loadfile) || event.getSource().equals(generate)){
+			BufferedImage raw;
+			if(event.getSource().equals(loadfile)){
+				raw = loadImage("./res/raw/" + filename.getText());
+			}
+			else{
+				raw = generateImage();
+			}
 			if(raw != null){
 				slimeTrail.clear();
 				if(endpoints != null){
@@ -219,36 +238,17 @@ public class Main implements ActionListener {
 					}
 				}
 				panel.setImages(raw, outline, processed);
+				if(autocalculate.isSelected()){
+					calculateData();
+				}
 				frame.repaint();
 			}
 			else{
 				endpoints = null;
-				System.out.println("test2");
 			}
 		}
 		else if(event.getSource().equals(calculate)){
-			//if endpoints were found
-			if(endpoints != null){
-				ArrayList<ArrayList<ArrayList<Integer>>> myList = new ArrayList<ArrayList<ArrayList<Integer>>>();
-				myList.add(endpoints);
-			
-				Double[][] my = processShape(myList);
-				for (Double[] value: my){
-					pointsLabel.setText("Number of Points: " + value[0]);
-					ratioLabel.setText("Width/Height Ratio: " + value[1]);
-					stddevLabel.setText("Angle Std Dev: " + value[2]);
-					anglesLabel.setText("Angle Average: " + value[3]);
-					for (Double actualValue : value){
-						System.out.println(actualValue);
-					}
-				}
-			}
-			else{
-				pointsLabel.setText("Number of Points: ");
-				ratioLabel.setText("Width/Height Ratio: ");
-				stddevLabel.setText("Angle Std Dev: ");
-				anglesLabel.setText("Angle Average: ");
-			}
+			calculateData();
 		}
 		else if(event.getSource().equals(savefile)){
 			if(panel.getCurrentImage() != null){
@@ -286,8 +286,8 @@ public class Main implements ActionListener {
 			im = ImageIO.read(in);
 			return im;
 		}
-		catch (Exception e) {
-			e.printStackTrace();
+		catch (IOException e) {
+			System.out.println("File not found!");
 			return null;
 		}
 	}
@@ -305,7 +305,7 @@ public class Main implements ActionListener {
 		//pure image is the one that is greyscaled 
 		int picWidth = test.getWidth();
     	int picHeight = test.getHeight();
-    	BufferedImage pureImage = new BufferedImage(picWidth, picHeight, test.getType()); ; //i think that this is a problem in the way the pointers work
+    	BufferedImage pureImage = new BufferedImage(picWidth, picHeight, test.getType());
     	for (int counterX = 0; counterX < (int)(picWidth ) ; counterX += 1){
     		for (int counterY = 0; counterY < (int)(picHeight ) ; counterY += 1){
     			int originalColor;
@@ -480,6 +480,43 @@ public class Main implements ActionListener {
 		return difference;
 	}
 	
+	public BufferedImage generateImage(){
+		int imgsize = 300;
+		Polygon p = new Polygon();
+		int shapeType = random.nextInt(2);
+		if(shapeType == 0){
+			int numPoints = 3;
+			for (int i = 0; i < numPoints; i++) {
+				p.addPoint(random.nextInt(imgsize + 1), random.nextInt(imgsize + 1));
+			}
+		}
+		else{
+			int topX = random.nextInt(imgsize + 1);
+			int topY = random.nextInt(imgsize + 1);
+			int botX = random.nextInt(imgsize + 1);
+			int botY = random.nextInt(imgsize + 1);
+			p.addPoint(topX, topY);
+			p.addPoint(topX, botY);
+			p.addPoint(botX, botY);
+			p.addPoint(botX, topY);
+		}
+		BufferedImage generatedImage = new BufferedImage(imgsize, imgsize, BufferedImage.TYPE_INT_RGB);
+		for (int x = 0; x < generatedImage.getWidth(); x++) {
+			for (int y = 0; y < generatedImage.getHeight(); y++) {
+				if(p.contains(new Point(x, y))){
+					generatedImage.setRGB(x, y, Color.RED.getRGB());
+				}
+				else{
+					generatedImage.setRGB(x, y, Color.WHITE.getRGB());
+				}
+			}
+		}
+		
+		return generatedImage;
+	}
+	
+	
+	
 	public void generateShapeData(){
 		int numPoints = 3;
 		int upperBound = 200;
@@ -554,6 +591,31 @@ public class Main implements ActionListener {
 		return outArray;
 	}
 	
+	public void calculateData(){
+		//if endpoints were found
+		if(endpoints != null){
+			ArrayList<ArrayList<ArrayList<Integer>>> myList = new ArrayList<ArrayList<ArrayList<Integer>>>();
+			myList.add(endpoints);
+		
+			Double[][] my = processShape(myList);
+			for (Double[] value: my){
+				pointsLabel.setText("Number of Points: " + value[0]);
+				ratioLabel.setText("Width/Height Ratio: " + value[1]);
+				stddevLabel.setText("Angle Std Dev: " + value[2]);
+				anglesLabel.setText("Angle Average: " + value[3]);
+				for (Double actualValue : value){
+					System.out.println(actualValue);
+				}
+			}
+		}
+		else{
+			pointsLabel.setText("Number of Points: ");
+			ratioLabel.setText("Width/Height Ratio: ");
+			stddevLabel.setText("Angle Std Dev: ");
+			anglesLabel.setText("Angle Average: ");
+		}
+	}
+		
 	private double sqr(double in) {
 		return in * in;
 	}

@@ -34,7 +34,7 @@ public class ImagePanel extends JPanel{
 		raw_scaled =  newraw.getScaledInstance(imgScaledWidth,imgScaledHeight,BufferedImage.SCALE_SMOOTH);
 		outline_scaled = newoutline.getScaledInstance(imgScaledWidth,imgScaledHeight,BufferedImage.SCALE_SMOOTH);
 		overlay_scaled = newoverlay.getScaledInstance(imgScaledWidth,imgScaledHeight,BufferedImage.SCALE_SMOOTH);
-		imgType = 0;
+		//imgType = 0;
 	}
 	
 	public void setImageDimensions(BufferedImage image){
