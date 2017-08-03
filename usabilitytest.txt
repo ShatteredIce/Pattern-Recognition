@@ -12,6 +12,7 @@ square.png
 rect4.png
 triangle1.png
 triangle7.png
+triangle8.png
 decagon.png
 
 

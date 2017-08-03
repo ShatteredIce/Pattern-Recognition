@@ -21,7 +21,8 @@ import javax.swing.JLabel;
 import javax.swing.JTextField;
 
 public class Main implements ActionListener {
-
+	
+	final Random random = new Random();
 	final int colorThreshold = 400;
 	final int blockThresh = 22;
 	final int differentiator = 2;
@@ -123,6 +124,8 @@ public class Main implements ActionListener {
 		
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setVisible(true);
+		
+		generateShapeData();
 		
 		
 //		String shapeName = "triangle4";
@@ -475,6 +478,26 @@ public class Main implements ActionListener {
 		int blue2 = pixel2.getBlue();
 		double difference = Math.sqrt(Math.pow(red1 - red2, 2) + Math.pow(green1 - green2, 2) + Math.pow(blue1 - blue2, 2));
 		return difference;
+	}
+	
+	public void generateShapeData(){
+		int numPoints = 3;
+		int upperBound = 200;
+		ArrayList<ArrayList<Integer>> shapePoints = new ArrayList<>();
+		for (int i = 0; i < numPoints; i++) {
+			ArrayList<Integer> currentPoint = new ArrayList<>();
+			currentPoint.add(random.nextInt(upperBound + 1));
+			currentPoint.add(random.nextInt(upperBound + 1));
+			shapePoints.add(currentPoint);
+			System.out.println("X: " + shapePoints.get(i).get(0) + " Y: " + shapePoints.get(i).get(1));
+		}
+		ArrayList<ArrayList<ArrayList<Integer>>> myList = new ArrayList<ArrayList<ArrayList<Integer>>>();
+		myList.add(shapePoints);
+		Double[] result = processShape(myList)[0];
+		for (int i = 0; i < result.length; i++) {
+			System.out.println(result[i]);
+		}
+		
 	}
 	
 	//Nested Arraylists: Shape >> Endpoints >> X,Y
