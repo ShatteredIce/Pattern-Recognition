@@ -26,7 +26,7 @@ public class Main {
 	
 	public Main(){
 		//problem with real vs fake...
-		String shapeName = "star";
+		String shapeName = "triangle1";
 		String type = "png";
 		
 		BufferedImage test = loadImage("./res/raw/" + shapeName + "." + type);
@@ -448,7 +448,7 @@ public class Main {
 	private ArrayList findEndpoints(BufferedImage blackLines){
 		//passing him an array list of shapes (arraylists) of points (arraylists)
 		//ArrayList<ArrayList> allPoints = findAllPointsOnShapes(blackLines);
-		//I GO COUNTER CLOCKWISE AROUND, WHITE ON RIGHT FROM POV
+		//WHITE ON RIGHT FROM POV
 		
 		ArrayList<Integer> firstPoint = new ArrayList<Integer>(); //what i start from
 		ArrayList<ArrayList<Integer>> allEnds = new ArrayList<ArrayList<Integer>>();
@@ -505,6 +505,7 @@ public class Main {
 				maxListNumber = 50;
 			}
 		}
+		//maxListNumber = 20;
 		//System.out.println("how many pixels" + findAllPointsOnShapes(blackLines).size()/80);
 		ArrayList<ArrayList<Integer>> returnME = new ArrayList<ArrayList<Integer>>();
 		 
@@ -587,7 +588,8 @@ public class Main {
 			if (history.size() > 3){
 				double slope = (double)(history.get(history.size()-3).get(2) - nextY) / (history.get(history.size()-3).get(1) - nextX); //find the slope in a double 
 				if (history.get(history.size()-3).get(1) - nextX == 0){
-					slope = 1000000000000.0;
+					//slope = 1000000000000.0;
+					slope = 1000.0;
 				}
 				if (first){ //find / change the running average -- use boolean "first"
 					average = slope;
@@ -604,9 +606,34 @@ public class Main {
 				System.out.println("you erred. please relook your code not in a rage. or, there is no shape so please relook the data");
 				//should i return null meaning no polygon, or return the found verticees
 			}else if (history.size() == maxListNumber){
+				int sensitivity = -5;
+				Double nowAverage = 0.0; 
+				int checkBack = 4;
+				for (int i = sensitivity; i <0; i +=1){ //goes thru and finds slope of the last 10
+					double thisSlope = (history.get(history.size()- 1 + i).get(2) - history.get(history.size()- checkBack + i).get(2))/(history.get(history.size()- 1 + i).get(1) - history.get(history.size()- 2 + i).get(1)) ;
+					if ((history.get(history.size()- 1 + i).get(1) - history.get(history.size()- 2 + i).get(1)) == 0){
+						//thisSlope = 1000000000000.0;
+						thisSlope = 1000.0;
+					}
+					if (i == sensitivity){
+						nowAverage = thisSlope;
+					}else{
+						nowAverage += thisSlope;
+						nowAverage = nowAverage/2;
+					}
+				}
+				//history.get(history.size() - 1 - sensitivity - checkBack);
+				Double myAngle = slopesToAngle(nowAverage, history.get(history.size() - 1 + sensitivity - checkBack).get(0)); //given slope 1, slope 2
+				myAngle = Math.toDegrees(myAngle);
+				if(myAngle > 180){
+					myAngle = 360 - myAngle;
+				}
+				//now I have an angle called myAngle which is how far away they are
+				
 				//System.out.println("im outside the if statement");
-				if (!(slopeMatch(history))){//compare current slope average to this one, kinda
+				if (myAngle > 20 ){//compare current slope average to this one, kinda
 					
+					System.out.println("my angle is " + myAngle + " guessed corner is" + nextX + ", " + nextY);
 					ArrayList<Integer> corner = new ArrayList<Integer>(); //the guessed corner, the next point
 					corner.add(nextX);
 					corner.add(nextY); 
@@ -645,6 +672,9 @@ public class Main {
 		
 	}
 	
+	private double slopesToAngle(double slope1, double slope2){
+		return Math.abs(2*Math.PI + Math.atan2(slope1, 1)%2*(Math.PI) - 2*Math.PI + Math.atan2(slope2, 1)%2*(Math.PI));
+	}
 	
 	private boolean slopeMatch (LinkedList<ArrayList<Double>> averages){
 		boolean slopeMatch = false; //what i will return. false if slope doesnt match meaning corner
