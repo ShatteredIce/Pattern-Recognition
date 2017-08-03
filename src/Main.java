@@ -26,7 +26,7 @@ public class Main {
 	
 	public Main(){
 		//problem with real vs fake...
-		String shapeName = "triangle2";
+		String shapeName = "star2";
 		String type = "png";
 		
 		BufferedImage test = loadImage("./res/raw/" + shapeName + "." + type);
@@ -491,8 +491,15 @@ public class Main {
 
 	private ArrayList<ArrayList<Integer>> tryToFindEndHelp(ArrayList<Integer> currentCoord, BufferedImage blackLines, double average, LinkedList<ArrayList<Double>> history, boolean first, ArrayList<ArrayList<Integer>> masterList, ArrayList<Integer> firstPoint, int currentDir, int maxListNumber){ //this is recursive
 		//ends if hits the edge of screen OR can't find colored pixel
-		
 		//current coord is the next point along the edge. searching for the next point
+		
+		if (first){
+			System.out.println("the first x is " + currentCoord.get(0));
+			System.out.println("the size of history should be 0 and is " + history.size());
+		}
+		
+		//Debugging the bug:
+			//something with master length list, first time it maxes out it selects that point MEANING WOAH DER
 		slimeTrail.add(currentCoord);
 		int x = currentCoord.get(0);
 		int y = currentCoord.get(1);
@@ -505,7 +512,7 @@ public class Main {
 				maxListNumber = 50;
 			}
 		}
-		//maxListNumber = 20;
+		//maxListNumber = 100;
 		//System.out.println("how many pixels" + findAllPointsOnShapes(blackLines).size()/80);
 		ArrayList<ArrayList<Integer>> returnME = new ArrayList<ArrayList<Integer>>();
 		 
@@ -608,7 +615,7 @@ public class Main {
 			}else if (history.size() == maxListNumber){
 				int sensitivity = -5;
 				Double nowAverage = 0.0; 
-				int checkBack = 4;
+				int checkBack = 2;
 				for (int i = sensitivity; i <0; i +=1){ //goes thru and finds slope of the last 10
 					double thisSlope = (history.get(history.size()- 1 + i).get(2) - history.get(history.size()- checkBack + i).get(2))/(history.get(history.size()- 1 + i).get(1) - history.get(history.size()- 2 + i).get(1)) ;
 					if ((history.get(history.size()- 1 + i).get(1) - history.get(history.size()- 2 + i).get(1)) == 0){
@@ -623,41 +630,51 @@ public class Main {
 					}
 				}
 				//history.get(history.size() - 1 - sensitivity - checkBack);
-				Double myAngle = slopesToAngle(nowAverage, history.get(history.size() - 1 + sensitivity - checkBack).get(0)); //given slope 1, slope 2
+				Double myAngle = slopesToAngle(nowAverage, history.get(history.size() - 2 + sensitivity).get(0)); //given slope 1, slope 2
 				myAngle = Math.toDegrees(myAngle);
-				if(myAngle > 180){
+				while (myAngle > 180){
 					myAngle = 360 - myAngle;
+				}
+				if (myAngle > 175){
+					myAngle =0.0;
 				}
 				//now I have an angle called myAngle which is how far away they are
 				
 				//System.out.println("im outside the if statement");
-				if (myAngle > 20 ){//compare current slope average to this one, kinda
-					
+				if (myAngle > 25 ){//compare current slope average to this one, kinda
+					System.out.println("the compared slopes are : " + nowAverage + " and " + history.get(history.size() - 2 + sensitivity).get(0));
 					System.out.println("my angle is " + myAngle + " guessed corner is" + nextX + ", " + nextY);
 					ArrayList<Integer> corner = new ArrayList<Integer>(); //the guessed corner, the next point
+					System.out.println("I found an angle and history's size is " + history.size());
 					corner.add(nextX);
 					corner.add(nextY); 
 					masterList.add(corner);
 					
 					history = new LinkedList<ArrayList<Double>>();
+					average = 0.0;
 					restart = true;
 				}else{
 					history.removeFirst();
 				}
 			}
 			
-			if (history.size() < 4){
-				restart = true;
-			}
+			//if (history.size() < 4){
+				//restart = true;
+			//}
 			//if they are the same
-			bundledHist.add(average);
-			bundledHist.add((double)nextX);
-			bundledHist.add((double)nextY);
-			bundledHist.add((double) dir);
-			history.addLast(bundledHist);
-			
-			newCoords.add(nextX);
-			newCoords.add(nextY);
+			if (restart == false){
+				bundledHist.add(average);
+				bundledHist.add((double)nextX);
+				bundledHist.add((double)nextY);
+				bundledHist.add((double) dir);
+				history.addLast(bundledHist);
+				
+				newCoords.add(nextX);
+				newCoords.add(nextY);
+			}else{
+				newCoords.add(x);
+				newCoords.add(y);
+			}
 			
 			returnME = tryToFindEndHelp(newCoords, blackLines, average, history, restart, masterList, firstPoint, dir, maxListNumber);
 			
@@ -673,7 +690,7 @@ public class Main {
 	}
 	
 	private double slopesToAngle(double slope1, double slope2){
-		return Math.abs(2*Math.PI + Math.atan2(slope1, 1)%2*(Math.PI) - 2*Math.PI + Math.atan2(slope2, 1)%2*(Math.PI));
+		return Math.abs((2*Math.PI + Math.atan2(slope1, 1)%(2*(Math.PI))) - (2*Math.PI + Math.atan2(slope2, 1)%(2*(Math.PI))));
 	}
 	
 	private boolean slopeMatch (LinkedList<ArrayList<Double>> averages){
