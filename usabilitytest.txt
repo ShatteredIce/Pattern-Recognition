@@ -10,10 +10,10 @@ Click on 'calculate' to display the shape data.
 
 Working files:
 square.png
-rect4.png
+rect.png
 triangle1.png
-triangle7.png
+triangle7.png (broken by new algorithm)
 triangle8.png
-decagon.png
+decagon.png (broken by new algorithm)
 
 
