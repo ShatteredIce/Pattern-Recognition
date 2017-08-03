@@ -26,7 +26,7 @@ public class Main {
 	
 	public Main(){
 		//problem with real vs fake...
-		String shapeName = "triangle1";
+		String shapeName = "triangle2";
 		String type = "png";
 		
 		BufferedImage test = loadImage("./res/raw/" + shapeName + "." + type);
@@ -586,8 +586,8 @@ public class Main {
 			ArrayList<Double> bundledHist = new ArrayList<Double>(); //order is average, x, y
 			
 			if (history.size() > 3){
-				double slope = (double)(history.get(history.size()-3).get(2) - nextY) / (history.get(history.size()-3).get(1) - nextX); //find the slope in a double 
-				if (history.get(history.size()-3).get(1) - nextX == 0){
+				double slope = (double)(history.get(history.size()-1).get(2) - nextY) / (history.get(history.size()-1).get(1) - nextX); //find the slope in a double 
+				if (history.get(history.size()-1).get(1) - nextX == 0){
 					//slope = 1000000000000.0;
 					slope = 1000.0;
 				}
