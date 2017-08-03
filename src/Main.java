@@ -26,8 +26,8 @@ public class Main {
 	
 	public Main(){
 		//problem with real vs fake...
-		String shapeName = "star2";
-		String type = "png";
+		String shapeName = "realCrop";
+		String type = "jpg";
 		
 		BufferedImage test = loadImage("./res/raw/" + shapeName + "." + type);
 		
