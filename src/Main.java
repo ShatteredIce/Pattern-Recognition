@@ -137,9 +137,7 @@ public class Main implements ActionListener {
 		
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setVisible(true);
-		
-		generateShapeData();
-		
+				
 		
 //		String shapeName = "triangle4";
 //		String type = "png";
@@ -483,6 +481,22 @@ public class Main implements ActionListener {
 	public BufferedImage generateImage(){
 		int imgsize = 300;
 		Polygon p = new Polygon();
+		ArrayList<Color> colors = new ArrayList<>();
+		colors.add(Color.RED);
+		colors.add(Color.BLUE);
+		colors.add(Color.GREEN);
+		colors.add(Color.LIGHT_GRAY);
+		colors.add(Color.DARK_GRAY);
+		colors.add(Color.CYAN);
+		colors.add(Color.ORANGE);
+		colors.add(Color.YELLOW);
+		colors.add(Color.PINK);
+		colors.add(Color.MAGENTA);
+		colors.add(Color.WHITE);
+		colors.add(Color.BLACK);
+		int shapeColorIndex = random.nextInt(colors.size());
+		int backgroundColorIndex = random.nextInt(colors.size());
+		while(backgroundColorIndex == shapeColorIndex){ backgroundColorIndex = random.nextInt(colors.size()); }
 		int shapeType = random.nextInt(2);
 		if(shapeType == 0){
 			int numPoints = 3;
@@ -504,10 +518,10 @@ public class Main implements ActionListener {
 		for (int x = 0; x < generatedImage.getWidth(); x++) {
 			for (int y = 0; y < generatedImage.getHeight(); y++) {
 				if(p.contains(new Point(x, y))){
-					generatedImage.setRGB(x, y, Color.RED.getRGB());
+					generatedImage.setRGB(x, y, colors.get(shapeColorIndex).getRGB());
 				}
 				else{
-					generatedImage.setRGB(x, y, Color.WHITE.getRGB());
+					generatedImage.setRGB(x, y, colors.get(backgroundColorIndex).getRGB());
 				}
 			}
 		}
@@ -593,7 +607,7 @@ public class Main implements ActionListener {
 	
 	public void calculateData(){
 		//if endpoints were found
-		if(endpoints != null){
+		if(endpoints != null && endpoints.size() > 0){
 			ArrayList<ArrayList<ArrayList<Integer>>> myList = new ArrayList<ArrayList<ArrayList<Integer>>>();
 			myList.add(endpoints);
 		
