@@ -134,7 +134,6 @@ public class Main implements ActionListener {
 		east.add(generate, c);
 		generate.addActionListener(this);
 		
-		
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setVisible(true);
 				
@@ -802,7 +801,7 @@ public class Main implements ActionListener {
 	private ArrayList findEndpoints(BufferedImage blackLines){
 		//passing him an array list of shapes (arraylists) of points (arraylists)
 		//ArrayList<ArrayList> allPoints = findAllPointsOnShapes(blackLines);
-		//I GO COUNTER CLOCKWISE AROUND, WHITE ON RIGHT FROM POV
+		//WHITE ON RIGHT FROM POV
 		
 		ArrayList<Integer> firstPoint = new ArrayList<Integer>(); //what i start from
 		ArrayList<ArrayList<Integer>> allEnds = new ArrayList<ArrayList<Integer>>();
@@ -845,20 +844,28 @@ public class Main implements ActionListener {
 
 	private ArrayList<ArrayList<Integer>> tryToFindEndHelp(ArrayList<Integer> currentCoord, BufferedImage blackLines, double average, LinkedList<ArrayList<Double>> history, boolean first, ArrayList<ArrayList<Integer>> masterList, ArrayList<Integer> firstPoint, int currentDir, int maxListNumber){ //this is recursive
 		//ends if hits the edge of screen OR can't find colored pixel
-		
 		//current coord is the next point along the edge. searching for the next point
+		
+		if (first){
+			System.out.println("the first x is " + currentCoord.get(0));
+			System.out.println("the size of history should be 0 and is " + history.size());
+		}
+		
+		//Debugging the bug:
+			//something with master length list, first time it maxes out it selects that point MEANING WOAH DER
 		slimeTrail.add(currentCoord);
 		int x = currentCoord.get(0);
 		int y = currentCoord.get(1);
 		int nextX = -1;
 		int nextY = -1;
 		
-		
+		maxListNumber = 50;
 		if (first){
 			if (maxListNumber < 50){
 				maxListNumber = 50;
 			}
 		}
+		//maxListNumber = 100;
 		//System.out.println("how many pixels" + findAllPointsOnShapes(blackLines).size()/80);
 		ArrayList<ArrayList<Integer>> returnME = new ArrayList<ArrayList<Integer>>();
 		 
@@ -934,53 +941,95 @@ public class Main implements ActionListener {
 			return masterList; // this is my base case
 			
 		}else if (nextX >= 0){ //means has been changed, since coords are not negative
+			boolean restart = false;
 			ArrayList<Integer> newCoords = new ArrayList<Integer>();
 			ArrayList<Double> bundledHist = new ArrayList<Double>(); //order is average, x, y
-			double slope = (double)(y - nextY) / (x - nextX); //find the slope in a double 
-			if (first){ //find / change the running average -- use boolean "first"
-				average = slope;
+			
+			if (history.size() > 3){
+				double slope = (double)(history.get(history.size()-1).get(2) - nextY) / (history.get(history.size()-1).get(1) - nextX); //find the slope in a double 
+				if (history.get(history.size()-1).get(1) - nextX == 0){
+					//slope = 1000000000000.0;
+					slope = 1000.0;
+				}
+				if (first){ //find / change the running average -- use boolean "first"
+					average = slope;
+				}else{
+					average += slope;
+					average = average/2;
+				}
 			}else{
-				average += slope;
-				average = average/2;
+				average = 0.0; //does this matter??
 			}
+			
 			//if linked list is len odd, and delete from front each time add to back.. compare slope to first element in linked list
 			if (history.size() > maxListNumber){
 				System.out.println("you erred. please relook your code not in a rage. or, there is no shape so please relook the data");
 				//should i return null meaning no polygon, or return the found verticees
 			}else if (history.size() == maxListNumber){
-				ArrayList<Double> passME = new ArrayList<Double>();
-				for (int i = 1; i < history.size(); i += 1){
-					passME.add(history.get(i).get(3));
+				int sensitivity = -5;
+				Double nowAverage = 0.0; 
+				int checkBack = 2;
+				for (int i = sensitivity; i <0; i +=1){ //goes thru and finds slope of the last 10
+					double thisSlope = (history.get(history.size()- 1 + i).get(2) - history.get(history.size()- checkBack + i).get(2))/(history.get(history.size()- 1 + i).get(1) - history.get(history.size()- 2 + i).get(1)) ;
+					if ((history.get(history.size()- 1 + i).get(1) - history.get(history.size()- 2 + i).get(1)) == 0){
+						//thisSlope = 1000000000000.0;
+						thisSlope = 1000.0;
+					}
+					if (i == sensitivity){
+						nowAverage = thisSlope;
+					}else{
+						nowAverage += thisSlope;
+						nowAverage = nowAverage/2;
+					}
 				}
+				//history.get(history.size() - 1 - sensitivity - checkBack);
+				Double myAngle = slopesToAngle(nowAverage, history.get(history.size() - 2 + sensitivity).get(0)); //given slope 1, slope 2
+				myAngle = Math.toDegrees(myAngle);
+				while (myAngle > 180){
+					myAngle = 360 - myAngle;
+				}
+				if (myAngle > 175){
+					myAngle =0.0;
+				}
+				//now I have an angle called myAngle which is how far away they are
+				
 				//System.out.println("im outside the if statement");
-				if (!(patternMatch(passME, dir))){//compare current slope average to this one, kinda
-					ArrayList<Integer> corner = new ArrayList<Integer>(); //the guessed corner, last point in history
-		
+				if (myAngle > 25 ){//compare current slope average to this one, kinda
+					System.out.println("the compared slopes are : " + nowAverage + " and " + history.get(history.size() - 2 + sensitivity).get(0));
+					System.out.println("my angle is " + myAngle + " guessed corner is" + nextX + ", " + nextY);
+					ArrayList<Integer> corner = new ArrayList<Integer>(); //the guessed corner, the next point
+					System.out.println("I found an angle and history's size is " + history.size());
 					corner.add(nextX);
-					corner.add(nextY);
+					corner.add(nextY); 
 					masterList.add(corner);
 					
-					//this loop is so it doesnt detect the end of the corner (:
-					int thisManyToDelete = history.size()/2; 
-					while(thisManyToDelete > 0){
-						history.removeFirst();
-						thisManyToDelete -= 1;
-					}
+					history = new LinkedList<ArrayList<Double>>();
+					average = 0.0;
+					restart = true;
 				}else{
 					history.removeFirst();
 				}
 			}
+			
+			//if (history.size() < 4){
+				//restart = true;
+			//}
 			//if they are the same
-			bundledHist.add(average);
-			bundledHist.add((double)nextX);
-			bundledHist.add((double)nextY);
-			bundledHist.add((double) dir);
-			history.addLast(bundledHist);
+			if (restart == false){
+				bundledHist.add(average);
+				bundledHist.add((double)nextX);
+				bundledHist.add((double)nextY);
+				bundledHist.add((double) dir);
+				history.addLast(bundledHist);
+				
+				newCoords.add(nextX);
+				newCoords.add(nextY);
+			}else{
+				newCoords.add(x);
+				newCoords.add(y);
+			}
 			
-			newCoords.add(nextX);
-			newCoords.add(nextY);
-			
-			returnME = tryToFindEndHelp(newCoords, blackLines, average, history, false, masterList, firstPoint, dir, maxListNumber);
+			returnME = tryToFindEndHelp(newCoords, blackLines, average, history, restart, masterList, firstPoint, dir, maxListNumber);
 			
 			}else if (history.size() > maxListNumber){
 				System.out.println("well shit. size should never exceed max number");
@@ -991,6 +1040,45 @@ public class Main implements ActionListener {
 		//System.out.println("returnME's size is " + returnME.size());
 		return returnME;
 		
+	}
+	
+	private double slopesToAngle(double slope1, double slope2){
+		return Math.abs((2*Math.PI + Math.atan2(slope1, 1)%(2*(Math.PI))) - (2*Math.PI + Math.atan2(slope2, 1)%(2*(Math.PI))));
+	}
+	
+	private boolean slopeMatch (LinkedList<ArrayList<Double>> averages){
+		boolean slopeMatch = false; //what i will return. false if slope doesnt match meaning corner
+		double nowAverage = 0; //this is the average slope of the last 10
+		int sensitivity = -5;
+		int checkBack = 4; //in normal this is 2
+		for (int i = sensitivity; i <0; i +=1){ //goes thru and finds slope of the last 10
+			double thisSlope = (averages.get(averages.size()- 1 + i).get(2) - averages.get(averages.size()- checkBack + i).get(2))/(averages.get(averages.size()- 1 + i).get(1) - averages.get(averages.size()- 2 + i).get(1)) ;
+			if ((averages.get(averages.size()- 1 + i).get(1) - averages.get(averages.size()- 2 + i).get(1)) == 0){
+				thisSlope = 1000000000000.0;
+			}
+			if (i == 0){
+				nowAverage = thisSlope;
+			}else{
+				nowAverage += thisSlope;
+				nowAverage = nowAverage/2;
+			}
+		}
+		double oldAverage = averages.get(averages.size() - checkBack + sensitivity).get(0);
+		if (oldAverage == nowAverage){
+			slopeMatch = true;
+		}else if (oldAverage != 0){
+			if (Math.abs(nowAverage / oldAverage) < 1.25 && Math.abs(nowAverage / oldAverage) > .75 ){
+				slopeMatch = true;
+			}
+		}else if (nowAverage != 0){
+			if (Math.abs(oldAverage/nowAverage) < 1.25 && Math.abs(oldAverage/nowAverage) > .75){
+				slopeMatch = true;
+			}
+		}
+		if (slopeMatch == false){
+			System.out.println("the old slope is " + oldAverage + ", the new slope is " + nowAverage);
+		}
+		return slopeMatch;
 	}
 	
 	private boolean patternMatch (ArrayList<Double> pattern, int myDir){
