@@ -1,5 +1,12 @@
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.Scanner;
+import java.util.StringTokenizer;
 
 public class NeuralNetwork {
 	
@@ -8,32 +15,31 @@ public class NeuralNetwork {
 	int[] neuronsInLayer = {4, 4, 3};
 	ArrayList<Neuron[]> layers = new ArrayList<>();
 	
-	double[][] trainingData = {{3, 0.863, 0.007, 1.047}, {3, 1.158, 0.003, 1.047}, {3, 1.571, 0.201, 1.047}, 
-		{3, 0.864, 0.005, 1.047}, {3, 1.366, 0.404, 1.047}, {3, 1.988, 0.432, 1.047}, {4, 1, 0.002, 1.571}, {4, 1, 0.002, 1.571},
-		{4, 3.075, 0.009, 1.571}, {4, 0.841, 0.004, 1.571}, {4, 0.821, 0.004, 1.571}}; 
-	
-	//triangle, square, rectangle
-	double[][] trainingAnswers = {{1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {1, 0, 0}, 
-			{0, 1, 0}, {0, 1, 0}, {0, 0, 1}, {0, 0, 1}, {0, 0, 1}};
-	
-	
-//	final int trainingSetSize = 100;
-//	final int trainingMax = 100;
-//	double[][] trainingData = new double[trainingSetSize][rawInputs];
-//	double[][] trainingAnswers = new double[trainingSetSize][neuronsInLayer[1]];
+//	double[][] trainingData = {{3, 0.863, 0.007, 1.047}, {3, 1.158, 0.003, 1.047}, {3, 1.571, 0.201, 1.047}, 
+//		{3, 0.864, 0.005, 1.047}, {3, 1.366, 0.404, 1.047}, {3, 1.988, 0.432, 1.047}, {3, 1.355, 1.224, 1.047},
+//		{4, 1, 0.002, 1.571}, {4, 1, 0.002, 1.571}, {4, 3.075, 0.009, 1.571}, {4, 0.841, 0.004, 1.571}, {4, 0.821, 0.004, 1.571}, {4, 0.554, 0, 1.571}}; 
+//	
+//	//triangle, square, rectangle
+//	double[][] trainingAnswers = {{1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {1, 0, 0}, {1, 0, 0}, 
+//			{0, 1, 0}, {0, 1, 0}, {0, 0, 1}, {0, 0, 1}, {0, 0, 1}, {0, 0, 1}};
+
+	final int trainingSetSize = 12;
+	double[][] trainingData = new double[trainingSetSize][rawInputs];
+	double[][] trainingAnswers = new double[trainingSetSize][neuronsInLayer[neuronsInLayer.length - 1]];
 
 	
 	public NeuralNetwork(){
-		
-		//populate layers of neurons
-		for(int i = 0; i < neuronsInLayer.length; i++){
-			Neuron[] layer = new Neuron[neuronsInLayer[i]];
-			int inputsPerLayer = (i == 0) ? rawInputs : neuronsInLayer[i - 1];
-			for(int j = 0; j < neuronsInLayer[i]; j++){
-				layer[j] = new Neuron(inputsPerLayer);
-			}
-			layers.add(layer);
-		}
+		loadTrainingData(trainingSetSize);
+
+//		//populate layers of neurons
+//		for(int i = 0; i < neuronsInLayer.length; i++){
+//			Neuron[] layer = new Neuron[neuronsInLayer[i]];
+//			int inputsPerLayer = (i == 0) ? rawInputs : neuronsInLayer[i - 1];
+//			for(int j = 0; j < neuronsInLayer[i]; j++){
+//				layer[j] = new Neuron(inputsPerLayer);
+//			}
+//			layers.add(layer);
+//		}
 		//displayWeights();
 	}
 	
@@ -66,6 +72,48 @@ public class NeuralNetwork {
 //				trainingAnswers[i][j] = (j == highestIndex) ? 1 : 0;
 //			}
 //		}
+	}
+	
+	public void loadTrainingData(int numData){
+		//load training data
+		BufferedReader input;
+		try {
+			input = new BufferedReader(new FileReader("./data/trainingdata.txt"));
+			for (int i = 0; i < numData; i++) {
+				try {
+					String current = input.readLine();
+					StringTokenizer st = new StringTokenizer(current, ", ");
+				    for (int j = 0; j < rawInputs; j++) {
+				    	trainingData[i][j] = Double.parseDouble(st.nextToken());
+					}
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		//load training answers
+		try {
+			input = new BufferedReader(new FileReader("./data/traininganswers.txt"));
+			for (int i = 0; i < numData; i++) {
+				try {
+					String current = input.readLine();
+					StringTokenizer st = new StringTokenizer(current, ", ");
+				    for (int j = 0; j < neuronsInLayer[neuronsInLayer.length - 1]; j++) {
+				    	trainingAnswers[i][j] = Double.parseDouble(st.nextToken());
+					}
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	public void run(double[] input){
