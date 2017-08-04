@@ -973,8 +973,8 @@ public class Main implements ActionListener {
 			firstPoint.add(200);
 			
 			*/
-			int maxListNumber = findAllPointsOnShapes(blackLines).size()/80; 
-			ArrayList<ArrayList<Integer>> thePoints = tryToFindEndHelp(firstPoint, blackLines, 0.0, new LinkedList<ArrayList<Double>>(), true, new ArrayList<ArrayList<Integer>>(), firstPoint, -1, maxListNumber);
+			int maxListNumber = findAllPointsOnShapes(blackLines).size()/200; 
+			ArrayList<ArrayList<Integer>> thePoints = tryToFindEndHelp(firstPoint, blackLines, 0.0, new LinkedList<ArrayList<Double>>(), true, new ArrayList<ArrayList<Integer>>(), firstPoint, -1, maxListNumber, 1);
 			System.out.println("thePoints size is: " + thePoints.size());
 			thePoints = endPointPreciser(thePoints, blackLines);
 			return thePoints;
@@ -983,10 +983,14 @@ public class Main implements ActionListener {
 		
 	}
 
-	private ArrayList<ArrayList<Integer>> tryToFindEndHelp(ArrayList<Integer> currentCoord, BufferedImage blackLines, double average, LinkedList<ArrayList<Double>> history, boolean first, ArrayList<ArrayList<Integer>> masterList, ArrayList<Integer> firstPoint, int currentDir, int maxListNumber){ //this is recursive
+	private ArrayList<ArrayList<Integer>> tryToFindEndHelp(ArrayList<Integer> currentCoord, BufferedImage blackLines, double average, LinkedList<ArrayList<Double>> history, boolean first, ArrayList<ArrayList<Integer>> masterList, ArrayList<Integer> firstPoint, int currentDir, int maxListNumber, int time){ //this is recursive
 		//ends if hits the edge of screen OR can't find colored pixel
 		//current coord is the next point along the edge. searching for the next point
 		
+		//make nother base case with max list number
+		boolean thisChange = false;
+		
+		System.out.println("the size of max history should  is " + maxListNumber);
 		if (first){
 			System.out.println("the first x is " + currentCoord.get(0));
 			System.out.println("the size of history should be 0 and is " + history.size());
@@ -1000,13 +1004,13 @@ public class Main implements ActionListener {
 		int nextX = -1;
 		int nextY = -1;
 		
-		maxListNumber = 50;
+		
 		if (first){
-			if (maxListNumber < 50){
-				maxListNumber = 50;
+			if (maxListNumber < 15){
+				maxListNumber = 15;
 			}
 		}
-		//maxListNumber = 100;
+		
 		//System.out.println("how many pixels" + findAllPointsOnShapes(blackLines).size()/80);
 		ArrayList<ArrayList<Integer>> returnME = new ArrayList<ArrayList<Integer>>();
 		 
@@ -1074,7 +1078,7 @@ public class Main implements ActionListener {
 				nextY = y + 1;
 				dir = 13;
 			}
-		}if (first == false && firstPoint.get(0) == nextX && firstPoint.get(1)== nextY){ //made it to the begginning and is not the first time around
+		}if (first == false && firstPoint.get(0) == nextX && firstPoint.get(1)== nextY || time == maxListNumber * 200){ //made it to the begginning and is not the first time around
 			System.out.println("i made it to my base case");
 			if (history.size() == maxListNumber){
 				masterList.add(firstPoint);
@@ -1086,18 +1090,25 @@ public class Main implements ActionListener {
 			ArrayList<Integer> newCoords = new ArrayList<Integer>();
 			ArrayList<Double> bundledHist = new ArrayList<Double>(); //order is average, x, y
 			
-			if (history.size() > 3){
+			if (history.size() > 0){
 				double slope = (double)(history.get(history.size()-1).get(2) - nextY) / (history.get(history.size()-1).get(1) - nextX); //find the slope in a double 
 				if (history.get(history.size()-1).get(1) - nextX == 0){
 					//slope = 1000000000000.0;
-					slope = 1000.0;
+					slope = 10.0;
 				}
 				if (first){ //find / change the running average -- use boolean "first"
 					average = slope;
 				}else{
-					average += slope;
-					average = average/2;
+					if (history.size()> 4){
+						average = average *3;
+						average += slope;
+						average = average/4;
+					}else{
+						average += slope;
+						average = average/2;
+					}
 				}
+			
 			}else{
 				average = 0.0; //does this matter??
 			}
@@ -1107,14 +1118,22 @@ public class Main implements ActionListener {
 				System.out.println("you erred. please relook your code not in a rage. or, there is no shape so please relook the data");
 				//should i return null meaning no polygon, or return the found verticees
 			}else if (history.size() == maxListNumber){
-				int sensitivity = -5;
+				//int sensitivity = -5;
+				int sensitivity = -(maxListNumber - 2);
 				Double nowAverage = 0.0; 
 				int checkBack = 2;
+				/*for (int i = 0; i < maxListNumber - 2; i +=1){ //goes thru and finds slope of the last 10
+					double thisSlope = (history.get(history.size()- 1 - i).get(2) - history.get(history.size()- 2 - i).get(2))/(history.get(history.size()- 1 - i).get(1) - history.get(history.size()- 2 - i).get(1)) ;
+					if ((history.get(history.size()- 1 - i).get(1) - history.get(history.size()- 2 - i).get(1)) == 0){
+						//thisSlope = 1000000000000.0;
+						thisSlope = 10.0;
+					}
+				*/
 				for (int i = sensitivity; i <0; i +=1){ //goes thru and finds slope of the last 10
-					double thisSlope = (history.get(history.size()- 1 + i).get(2) - history.get(history.size()- checkBack + i).get(2))/(history.get(history.size()- 1 + i).get(1) - history.get(history.size()- 2 + i).get(1)) ;
+					double thisSlope = (history.get(history.size()- 1 + i).get(2) - history.get(history.size()- 2 + i).get(2))/(history.get(history.size()- 1 + i).get(1) - history.get(history.size()- 2 + i).get(1)) ;
 					if ((history.get(history.size()- 1 + i).get(1) - history.get(history.size()- 2 + i).get(1)) == 0){
 						//thisSlope = 1000000000000.0;
-						thisSlope = 1000.0;
+						thisSlope = 10.0;
 					}
 					if (i == sensitivity){
 						nowAverage = thisSlope;
@@ -1135,18 +1154,30 @@ public class Main implements ActionListener {
 				//now I have an angle called myAngle which is how far away they are
 				
 				//System.out.println("im outside the if statement");
-				if (myAngle > 25 ){//compare current slope average to this one, kinda
-					System.out.println("the compared slopes are : " + nowAverage + " and " + history.get(history.size() - 2 + sensitivity).get(0));
-					System.out.println("my angle is " + myAngle + " guessed corner is" + nextX + ", " + nextY);
-					ArrayList<Integer> corner = new ArrayList<Integer>(); //the guessed corner, the next point
-					System.out.println("I found an angle and history's size is " + history.size());
-					corner.add(nextX);
-					corner.add(nextY); 
-					masterList.add(corner);
-					
-					history = new LinkedList<ArrayList<Double>>();
-					average = 0.0;
-					restart = true;
+				if (myAngle > 35 ){//compare current slope average to this one, kinda
+					thisChange = true;
+					boolean goOn = true;
+					for (int i = 1; i < 3; i +=1){
+						if (history.get(history.size() - i).get(4) <0){
+							goOn = false;
+						}
+					}
+					if (goOn){
+						System.out.println("the compared slopes are : " + nowAverage + " and " + history.get(history.size() - 2 + sensitivity).get(0));
+						System.out.println("my angle is " + myAngle + " guessed corner is" + nextX + ", " + nextY);
+						ArrayList<Integer> corner = new ArrayList<Integer>(); //the guessed corner, the next point
+						System.out.println("I found an angle and history's size is " + history.size());
+						corner.add(nextX);
+						corner.add(nextY); 
+						masterList.add(corner);
+						
+						history = new LinkedList<ArrayList<Double>>();
+						average = 0.0;
+						restart = true;
+						thisChange = false;
+					}else{
+						history.removeFirst();
+					}
 				}else{
 					history.removeFirst();
 				}
@@ -1161,6 +1192,11 @@ public class Main implements ActionListener {
 				bundledHist.add((double)nextX);
 				bundledHist.add((double)nextY);
 				bundledHist.add((double) dir);
+				if (thisChange){
+					bundledHist.add(1.0); //if this change is true
+				}else{
+					bundledHist.add(-1.0);
+				}
 				history.addLast(bundledHist);
 				
 				newCoords.add(nextX);
@@ -1170,7 +1206,7 @@ public class Main implements ActionListener {
 				newCoords.add(y);
 			}
 			
-			returnME = tryToFindEndHelp(newCoords, blackLines, average, history, restart, masterList, firstPoint, dir, maxListNumber);
+			returnME = tryToFindEndHelp(newCoords, blackLines, average, history, restart, masterList, firstPoint, dir, maxListNumber, time += 1);
 			
 			}else if (history.size() > maxListNumber){
 				System.out.println("well shit. size should never exceed max number");
