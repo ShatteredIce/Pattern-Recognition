@@ -50,16 +50,18 @@ public class Main implements ActionListener {
 	Container center = new Container();
 	ImagePanel panel = new ImagePanel();
 	JButton imgButton1 = new JButton("Raw");
-	JButton imgButton2 = new JButton("Outline");
-	JButton imgButton3 = new JButton("Dilate+Erode");
-	JButton imgButton4 = new JButton("Processed");
+	JButton imgButton2 = new JButton("Blur");
+	JButton imgButton3 = new JButton("Outline");
+	JButton imgButton4 = new JButton("Dilate+Erode");
+	JButton imgButton5 = new JButton("Processed");
 	//east container
 	Container east = new Container();
 	JButton calculate = new JButton("Calculate");
 	JButton loadfile = new JButton("Load");
 	JButton savefile = new JButton("Save");
 	JButton generate = new JButton("Generate");
-	JCheckBox autocalculate = new JCheckBox("Auto-Calculate");
+	JCheckBox autocalculate = new JCheckBox("Auto-Calc");
+	JCheckBox blur = new JCheckBox("Blur");
 	JLabel pointsLabel = new JLabel("Number of Points: ");
 	JLabel ratioLabel = new JLabel("Width/Height Ratio: ");
 	JLabel stddevLabel = new JLabel("Angle Std Dev: ");
@@ -107,6 +109,9 @@ public class Main implements ActionListener {
 		c = setGridBagConstraints(c, 3, 1, 0, 0, 0.2, 0);
 		center.add(imgButton4, c);
 		imgButton4.addActionListener(this);
+		c = setGridBagConstraints(c, 4, 1, 0, 0, 0.2, 0);
+		center.add(imgButton5, c);
+		imgButton5.addActionListener(this);
 		
 		//set east layout
 		east.setLayout(new GridBagLayout());
@@ -122,8 +127,12 @@ public class Main implements ActionListener {
 		east.add(savefile, c);
 		savefile.addActionListener(this);
 		c.gridwidth = 3;
-		c = setGridBagConstraints(c, 0, 1, 0, 10, 0, 0);
+		c = setGridBagConstraints(c, 1, 1, 0, 10, 0, 0);
 		east.add(autocalculate, c);
+		c = setGridBagConstraints(c, 0, 1, 0, 10, 0, 0);
+		east.add(blur, c);
+		blur.setSelected(true);
+		blur.addActionListener(this);
 		c = setGridBagConstraints(c, 0, 2, 0, 0, 0, 0.1);
 		east.add(pointsLabel, c);
 		c = setGridBagConstraints(c, 0, 3, 0, 0, 0, 0.1);
@@ -221,7 +230,14 @@ public class Main implements ActionListener {
 				if(endpoints != null){
 					endpoints.clear();
 				}
-				BufferedImage outline = checkEdges(findEdges(raw));
+				BufferedImage blurred;
+				if(blur.isSelected()){
+					blurred = gaussianBlur(raw);
+				}
+				else{
+					blurred = raw;
+				}
+				BufferedImage outline = checkEdges(findEdges(blurred));
 				BufferedImage modifiedOutline = erodeImage(dilateImage(outline));
 //				for (int i = 0; i < 2; i++) {	
 //					modifiedOutline = dilateImage(modifiedOutline);
@@ -230,7 +246,7 @@ public class Main implements ActionListener {
 //					modifiedOutline = erodeImage(modifiedOutline);
 //				}
 				BufferedImage processed = highlightShape(modifiedOutline, raw);
-				endpoints = findEndpointsOld(modifiedOutline);
+				endpoints = findEndpoints(modifiedOutline);
 				//display slime trail as outline
 				for (int k = 0; k < slimeTrail.size(); k += 1){
 					processed.setRGB(slimeTrail.get(k).get(0), slimeTrail.get(k).get(1), slimeTrailColor.getRGB());
@@ -253,7 +269,7 @@ public class Main implements ActionListener {
 						System.out.println("X:" + temp.get(0) + " Y: " + temp.get(1));
 					}
 				}
-				panel.setImages(raw, outline, modifiedOutline, processed);
+				panel.setImages(raw, blurred, outline, modifiedOutline, processed);
 				//if the auto-calculate checkbox is selected, calculate data
 				if(autocalculate.isSelected()){
 					calculateData();
@@ -279,20 +295,34 @@ public class Main implements ActionListener {
 			panel.setImgType(0);
 			frame.repaint();
 		}
-		//select the outline image to be displayed
+		//select the blurred image to be displayed
 		else if(event.getSource().equals(imgButton2)){
 			panel.setImgType(1);
 			frame.repaint();
 		}
-		//select the modified outine image to be displayed
+		//select the outline image to be displayed
 		else if(event.getSource().equals(imgButton3)){
 			panel.setImgType(2);
 			frame.repaint();
 		}
-		//select the processed image to be displayed
+		//select the modified outine image to be displayed
 		else if(event.getSource().equals(imgButton4)){
 			panel.setImgType(3);
 			frame.repaint();
+		}
+		//select the processed image to be displayed
+		else if(event.getSource().equals(imgButton5)){
+			panel.setImgType(4);
+			frame.repaint();
+		}
+		//if blur checkbox was changed
+		else if(event.getSource().equals(blur)){
+			if(blur.isSelected()){
+				imgButton2.setEnabled(true);
+			}
+			else{
+				imgButton2.setEnabled(false);
+			}
 		}
 	}
 	
