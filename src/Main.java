@@ -223,6 +223,12 @@ public class Main implements ActionListener {
 				}
 				BufferedImage outline = checkEdges(findEdges(raw));
 				BufferedImage modifiedOutline = erodeImage(dilateImage(outline));
+//				for (int i = 0; i < 2; i++) {
+//					modifiedOutline = dilateImage(modifiedOutline);
+//				}
+//				for (int i = 0; i < 2; i++) {
+//					modifiedOutline = erodeImage(modifiedOutline);
+//				}
 				BufferedImage processed = highlightShape(modifiedOutline, raw);
 				endpoints = findEndpointsOld(modifiedOutline);
 				//display slime trail as outline
@@ -491,16 +497,28 @@ public class Main implements ActionListener {
 				//if pixel is colored in original image, set adjacent pixels to colored in dilated image
 				if (img.getRGB(x, y) == edgeColor.getRGB()) {
 					if(x < img.getWidth() - 1){
-						dilated.setRGB(x+1, y, edgeColor.getRGB());
+						dilated.setRGB(x+1, y, edgeColor.getRGB()); //right
+						if(y < img.getHeight() - 1){
+							dilated.setRGB(x+1, y+1, edgeColor.getRGB()); //top right
+						}
+						if(y > 0){
+							dilated.setRGB(x+1, y-1, edgeColor.getRGB()); //bottom right
+						}
 					}
 					if(x > 0){
 						dilated.setRGB(x-1, y, edgeColor.getRGB());
+						if(y < img.getHeight() - 1){ //left
+							dilated.setRGB(x-1, y+1, edgeColor.getRGB()); //top left
+						}
+						if(y > 0){
+							dilated.setRGB(x-1, y-1, edgeColor.getRGB()); //bottom left
+						}
 					}
 					if(y < img.getHeight() - 1){
-						dilated.setRGB(x, y+1, edgeColor.getRGB());
+						dilated.setRGB(x, y+1, edgeColor.getRGB()); //top
 					}
 					if(y > 0){
-						dilated.setRGB(x, y-1, edgeColor.getRGB());
+						dilated.setRGB(x, y-1, edgeColor.getRGB()); //bottom
 					}
 				}
 			}
@@ -525,15 +543,27 @@ public class Main implements ActionListener {
 				if (img.getRGB(x, y) == backgroundColor.getRGB()) {
 					if(x < img.getWidth() - 1){
 						eroded.setRGB(x+1, y, backgroundColor.getRGB());
+						if(y < img.getHeight() - 1){
+							eroded.setRGB(x+1, y+1, backgroundColor.getRGB()); //top right
+						}
+						if(y > 0){
+							eroded.setRGB(x+1, y-1, backgroundColor.getRGB()); //bottom right
+						}
 					}
 					if(x > 0){
 						eroded.setRGB(x-1, y, backgroundColor.getRGB());
+						if(y < img.getHeight() - 1){
+							eroded.setRGB(x-1, y+1, backgroundColor.getRGB()); //top left
+						}
+						if(y > 0){
+							eroded.setRGB(x-1, y-1, backgroundColor.getRGB()); //bottom left
+						}
 					}
 					if(y < img.getHeight() - 1){
-						eroded.setRGB(x, y+1, backgroundColor.getRGB());
+						eroded.setRGB(x, y+1, backgroundColor.getRGB()); //top
 					}
 					if(y > 0){
-						eroded.setRGB(x, y-1, backgroundColor.getRGB());
+						eroded.setRGB(x, y-1, backgroundColor.getRGB()); //bottom
 					}
 					
 				}
