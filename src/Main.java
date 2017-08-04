@@ -51,7 +51,8 @@ public class Main implements ActionListener {
 	ImagePanel panel = new ImagePanel();
 	JButton imgButton1 = new JButton("Raw");
 	JButton imgButton2 = new JButton("Outline");
-	JButton imgButton3 = new JButton("Processed");
+	JButton imgButton3 = new JButton("Dilate+Erode");
+	JButton imgButton4 = new JButton("Processed");
 	//east container
 	Container east = new Container();
 	JButton calculate = new JButton("Calculate");
@@ -89,7 +90,7 @@ public class Main implements ActionListener {
 		center.setLayout(new GridBagLayout());
 		c.anchor = GridBagConstraints.LINE_START;
 		c.fill = GridBagConstraints.BOTH;
-		c.gridwidth = 3;
+		c.gridwidth = 4;
 		c = setGridBagConstraints(c, 0, 0, 0, 0, 1, 1);
 		center.add(panel, c);
 		c.fill = GridBagConstraints.BOTH;
@@ -103,6 +104,9 @@ public class Main implements ActionListener {
 		c = setGridBagConstraints(c, 2, 1, 0, 0, 0.2, 0);
 		center.add(imgButton3, c);
 		imgButton3.addActionListener(this);
+		c = setGridBagConstraints(c, 3, 1, 0, 0, 0.2, 0);
+		center.add(imgButton4, c);
+		imgButton4.addActionListener(this);
 		
 		//set east layout
 		east.setLayout(new GridBagLayout());
@@ -130,12 +134,16 @@ public class Main implements ActionListener {
 		east.add(anglesLabel, c);
 		c = setGridBagConstraints(c, 0, 6, 0, 0, 0, 2);
 		east.add(tempLabel, c);
-		c = setGridBagConstraints(c, 2, 7, 0, 0, 0, 0);
+		c.gridwidth = 2;
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c = setGridBagConstraints(c, 1, 7, 20, 0, 1, 0);
 		east.add(generate, c);
 		generate.addActionListener(this);
 		
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setVisible(true);
+		
+		NeuralNetwork net = new NeuralNetwork();
 				
 		
 //		String shapeName = "triangle4";
@@ -214,11 +222,11 @@ public class Main implements ActionListener {
 					endpoints.clear();
 				}
 				BufferedImage outline = checkEdges(findEdges(raw));
-				BufferedImage processed = highlightShape(outline, raw);
-				endpoints = findEndpoints(outline);
+				BufferedImage modifiedOutline = erodeImage(dilateImage(outline));
+				BufferedImage processed = highlightShape(modifiedOutline, raw);
+				endpoints = findEndpointsOld(modifiedOutline);
 				//display slime trail as outline
 				for (int k = 0; k < slimeTrail.size(); k += 1){
-					outline.setRGB(slimeTrail.get(k).get(0), slimeTrail.get(k).get(1), slimeTrailColor.getRGB());
 					processed.setRGB(slimeTrail.get(k).get(0), slimeTrail.get(k).get(1), slimeTrailColor.getRGB());
 				}
 				//display endpoints as dots
@@ -229,6 +237,7 @@ public class Main implements ActionListener {
 						for (int j = -endpointWidth; j <= endpointWidth; j++) {
 							for (int k = -endpointWidth; k <= endpointWidth; k++) {
 								outline.setRGB((int)temp.get(0)+j, (int)temp.get(1)+k, endPointColor.getRGB());
+								modifiedOutline.setRGB((int)temp.get(0)+j, (int)temp.get(1)+k, endPointColor.getRGB());
 								processed.setRGB((int)temp.get(0)+j, (int)temp.get(1)+k, endPointColor.getRGB());
 								if (i == endpoints.size() -1){
 									//shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(255,255,255)).getRGB());
@@ -238,7 +247,7 @@ public class Main implements ActionListener {
 						System.out.println("X:" + temp.get(0) + " Y: " + temp.get(1));
 					}
 				}
-				panel.setImages(raw, outline, processed);
+				panel.setImages(raw, outline, modifiedOutline, processed);
 				//if the auto-calculate checkbox is selected, calculate data
 				if(autocalculate.isSelected()){
 					calculateData();
@@ -269,9 +278,14 @@ public class Main implements ActionListener {
 			panel.setImgType(1);
 			frame.repaint();
 		}
-		//select the processed image to be displayed
+		//select the modified outine image to be displayed
 		else if(event.getSource().equals(imgButton3)){
 			panel.setImgType(2);
+			frame.repaint();
+		}
+		//select the processed image to be displayed
+		else if(event.getSource().equals(imgButton4)){
+			panel.setImgType(3);
 			frame.repaint();
 		}
 	}
@@ -459,6 +473,73 @@ public class Main implements ActionListener {
 			}
 		}
 		return convertedImage;
+	}
+	
+	//dilate an image, used to dilate the red outline of a shape
+	private BufferedImage dilateImage(BufferedImage img){
+		BufferedImage dilated = new BufferedImage(img.getWidth(), img.getHeight(), img.getType());
+		Color edgeColor = Color.RED;
+		Color backgroundColor = Color.WHITE;
+		//set dilated image to original image 
+		for (int x = 0; x < img.getWidth(); x++) {
+			for (int y = 0; y < img.getHeight(); y++) {
+				dilated.setRGB(x, y, img.getRGB(x, y));
+			}
+		}
+		for (int x = 0; x < img.getWidth(); x++) {
+			for (int y = 0; y < img.getHeight(); y++) {
+				//if pixel is colored in original image, set adjacent pixels to colored in dilated image
+				if (img.getRGB(x, y) == edgeColor.getRGB()) {
+					if(x < img.getWidth() - 1){
+						dilated.setRGB(x+1, y, edgeColor.getRGB());
+					}
+					if(x > 0){
+						dilated.setRGB(x-1, y, edgeColor.getRGB());
+					}
+					if(y < img.getHeight() - 1){
+						dilated.setRGB(x, y+1, edgeColor.getRGB());
+					}
+					if(y > 0){
+						dilated.setRGB(x, y-1, edgeColor.getRGB());
+					}
+				}
+			}
+		}
+		return dilated;
+	}
+	
+	//erode an image, used to erode the red outline of a shape
+	private BufferedImage erodeImage(BufferedImage img){
+		BufferedImage eroded = new BufferedImage(img.getWidth(), img.getHeight(), img.getType());
+		Color edgeColor = Color.RED;
+		Color backgroundColor = Color.WHITE;
+		//set eroded image to original image 
+		for (int x = 0; x < img.getWidth(); x++) {
+			for (int y = 0; y < img.getHeight(); y++) {
+				eroded.setRGB(x, y, img.getRGB(x, y));
+			}
+		}
+		for (int x = 0; x < img.getWidth(); x++) {
+			for (int y = 0; y < img.getHeight(); y++) {
+				//if pixel is uncolored in original image, set adjacent pixels to uncolored in eroded image
+				if (img.getRGB(x, y) == backgroundColor.getRGB()) {
+					if(x < img.getWidth() - 1){
+						eroded.setRGB(x+1, y, backgroundColor.getRGB());
+					}
+					if(x > 0){
+						eroded.setRGB(x-1, y, backgroundColor.getRGB());
+					}
+					if(y < img.getHeight() - 1){
+						eroded.setRGB(x, y+1, backgroundColor.getRGB());
+					}
+					if(y > 0){
+						eroded.setRGB(x, y-1, backgroundColor.getRGB());
+					}
+					
+				}
+			}
+		}
+		return eroded;
 	}
 	
 	private BufferedImage highlightShape(BufferedImage blackLines, BufferedImage real){
@@ -1074,6 +1155,200 @@ public class Main implements ActionListener {
 	
 	private double slopesToAngle(double slope1, double slope2){
 		return Math.abs((2*Math.PI + Math.atan2(slope1, 1)%(2*(Math.PI))) - (2*Math.PI + Math.atan2(slope2, 1)%(2*(Math.PI))));
+	}
+	
+	private ArrayList findEndpointsOld(BufferedImage blackLines){
+		//passing him an array list of shapes (arraylists) of points (arraylists)
+		//ArrayList<ArrayList> allPoints = findAllPointsOnShapes(blackLines);
+		//I GO COUNTER CLOCKWISE AROUND, WHITE ON RIGHT FROM POV
+		
+		ArrayList<Integer> firstPoint = new ArrayList<Integer>(); //what i start from
+		ArrayList<ArrayList<Integer>> allEnds = new ArrayList<ArrayList<Integer>>();
+		
+		int picHeight = blackLines.getHeight();
+		int picWidth = blackLines.getWidth();
+		for (int counterY = 0; counterY < (picHeight) ; counterY += 1){
+    		for (int counterX = 0; counterX < (picWidth) ; counterX += 1){
+    			int originalColor;
+    			originalColor = blackLines.getRGB(counterX, counterY);
+        		Color myColor = new Color(originalColor);
+        		if (myColor.equals(Color.RED)){
+        			firstPoint.add(counterX);
+        			firstPoint.add(counterY);
+        			break;
+        		}
+        		
+    		}
+		}if (firstPoint.size() == 0){ //this means there is not a shape!!
+			System.out.println("not a shape...");
+			return null;
+			
+		}else{
+			//ArrayList<ArrayList<Integer>> thePoints = tryToFindEndHelp(firstPoint, blackLines, 0.0, new LinkedList<ArrayList<Double>>(), true, new ArrayList<ArrayList<Integer>>(), firstPoint);
+			/*firstPoint.remove(0);
+			firstPoint.remove(0);
+			firstPoint.add(234);
+			firstPoint.add(200);
+			
+			*/
+			int maxListNumber = findAllPointsOnShapes(blackLines).size()/80; 
+			ArrayList<ArrayList<Integer>> thePoints = tryToFindEndHelpOld(firstPoint, blackLines, 0.0, new LinkedList<ArrayList<Double>>(), true, new ArrayList<ArrayList<Integer>>(), firstPoint, -1, maxListNumber);
+			System.out.println("thePoints size is: " + thePoints.size());
+			thePoints = endPointPreciser(thePoints, blackLines);
+			return thePoints;
+		}
+		
+		
+	}
+
+	private ArrayList<ArrayList<Integer>> tryToFindEndHelpOld(ArrayList<Integer> currentCoord, BufferedImage blackLines, double average, LinkedList<ArrayList<Double>> history, boolean first, ArrayList<ArrayList<Integer>> masterList, ArrayList<Integer> firstPoint, int currentDir, int maxListNumber){ //this is recursive
+		//ends if hits the edge of screen OR can't find colored pixel
+		
+		//current coord is the next point along the edge. searching for the next point
+		slimeTrail.add(currentCoord);
+		int x = currentCoord.get(0);
+		int y = currentCoord.get(1);
+		int nextX = -1;
+		int nextY = -1;
+		
+		
+		if (first){
+			if (maxListNumber < 50){
+				maxListNumber = 50;
+			}
+		}
+		//System.out.println("how many pixels" + findAllPointsOnShapes(blackLines).size()/80);
+		ArrayList<ArrayList<Integer>> returnME = new ArrayList<ArrayList<Integer>>();
+		 
+		int dir = -1;
+
+		if (x != 0){ //not on left edge
+			if (y != 0){ //not on top screen
+				//look up left
+				if (nextPixelHelper(x -1, y-1, blackLines, 0)){
+					nextX = x -1; 
+					nextY = y -1;
+					dir = 10;
+				}
+			}
+			if (y != blackLines.getHeight()){ //not on bottom screen
+				//look down left
+				if (nextPixelHelper(x - 1, y + 1, blackLines, 1)){
+					nextX = x - 1; 
+					nextY = y + 1;
+					dir = 12;
+				}
+			}
+			if (nextPixelHelper(x-1, y, blackLines, 1)){ //go left left
+				nextX = x-1;
+				nextY = y;
+				dir = 11;
+			}
+		}
+		if (x != blackLines.getWidth()){ //not on right edge
+			if (y != 0){ //not on top screen
+				//look up right up
+				if (nextPixelHelper(x + 1, y-1, blackLines, 3)){
+					nextX = x +1; 
+					nextY = y -1;
+					dir = 16;
+				}
+			}
+			if (y != blackLines.getHeight()){ //not on bottom screen
+				//look down right
+				if (nextPixelHelper(x + 1, y + 1, blackLines, 2)){
+					nextX = x + 1; 
+					nextY = y + 1;
+					dir = 14;
+				}
+			}
+			//look right right
+			if (nextPixelHelper(x + 1, y, blackLines, 3)){
+				nextX = x + 1; 
+				nextY = y;
+				dir = 15;
+			}
+		}
+		if (y != 0){ //not on top screen
+			//look up up
+			if (nextPixelHelper(x, y-1, blackLines, 0)){
+				nextX = x; 
+				nextY = y -1;
+				dir = 17;
+			}
+		}
+		if (y != blackLines.getHeight()){ //not on bottom screen
+			//look down down
+			if (nextPixelHelper(x, y+1, blackLines, 2)){
+				nextX = x; 
+				nextY = y + 1;
+				dir = 13;
+			}
+		}if (first == false && firstPoint.get(0) == nextX && firstPoint.get(1)== nextY){ //made it to the begginning and is not the first time around
+			System.out.println("i made it to my base case");
+			if (history.size() == maxListNumber){
+				masterList.add(firstPoint);
+			}
+			return masterList; // this is my base case
+			
+		}else if (nextX >= 0){ //means has been changed, since coords are not negative
+			ArrayList<Integer> newCoords = new ArrayList<Integer>();
+			ArrayList<Double> bundledHist = new ArrayList<Double>(); //order is average, x, y
+			double slope = (double)(y - nextY) / (x - nextX); //find the slope in a double 
+			if (first){ //find / change the running average -- use boolean "first"
+				average = slope;
+			}else{
+				average += slope;
+				average = average/2;
+			}
+			//if linked list is len odd, and delete from front each time add to back.. compare slope to first element in linked list
+			if (history.size() > maxListNumber){
+				System.out.println("you erred. please relook your code not in a rage. or, there is no shape so please relook the data");
+				//should i return null meaning no polygon, or return the found verticees
+			}else if (history.size() == maxListNumber){
+				ArrayList<Double> passME = new ArrayList<Double>();
+				for (int i = 1; i < history.size(); i += 1){
+					passME.add(history.get(i).get(3));
+				}
+				//System.out.println("im outside the if statement");
+				if (!(patternMatch(passME, dir))){//compare current slope average to this one, kinda
+					ArrayList<Integer> corner = new ArrayList<Integer>(); //the guessed corner, last point in history
+		
+					corner.add(nextX);
+					corner.add(nextY);
+					masterList.add(corner);
+					
+					//this loop is so it doesnt detect the end of the corner (:
+					int thisManyToDelete = history.size()/2; 
+					while(thisManyToDelete > 0){
+						history.removeFirst();
+						thisManyToDelete -= 1;
+					}
+				}else{
+					history.removeFirst();
+				}
+			}
+			//if they are the same
+			bundledHist.add(average);
+			bundledHist.add((double)nextX);
+			bundledHist.add((double)nextY);
+			bundledHist.add((double) dir);
+			history.addLast(bundledHist);
+			
+			newCoords.add(nextX);
+			newCoords.add(nextY);
+			
+			returnME = tryToFindEndHelpOld(newCoords, blackLines, average, history, false, masterList, firstPoint, dir, maxListNumber);
+			
+			}else if (history.size() > maxListNumber){
+				System.out.println("well shit. size should never exceed max number");
+			}
+		else{
+			System.out.println("i didnt find  a next point. i am this x: " + x + " and this y: " + y);
+		}
+		//System.out.println("returnME's size is " + returnME.size());
+		return returnME;
+		
 	}
 	
 	private boolean slopeMatch (LinkedList<ArrayList<Double>> averages){
