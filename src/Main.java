@@ -223,7 +223,7 @@ public class Main implements ActionListener {
 				}
 				BufferedImage outline = checkEdges(findEdges(raw));
 				BufferedImage modifiedOutline = erodeImage(dilateImage(outline));
-//				for (int i = 0; i < 2; i++) {
+//				for (int i = 0; i < 2; i++) {	
 //					modifiedOutline = dilateImage(modifiedOutline);
 //				}
 //				for (int i = 0; i < 2; i++) {
