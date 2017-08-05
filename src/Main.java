@@ -16,8 +16,8 @@ public class Main {
 	final int colorThreshold = 5;
 	final int neighborMinThreshold = 5; //five or less or stack overflow 
 	final int neighborMaxThreshold = 25;
-	final int blockThresh = 23;
-	final int differentiator = 0;
+	final int blockThresh = 22;
+	final int differentiator = 2;
 	final int spaceAroundCrop = 25;
 	final int spArCr = spaceAroundCrop;
 	
@@ -33,7 +33,7 @@ public class Main {
 		int index = -1;
 		for(BufferedImage test : tests) {
 			index ++;
-			storeImage(highlightShape(findEdges(test),test), "./res/processed/" + shapeName + "_out.png");
+			storeImage(highlightShape(findEdges(test),test), "./res/processed/" + shapeName +index+"_out.png");
 			System.out.print("finished storeImage 1");
 			BufferedImage shape = highlightShape(findEdges((test)), test);
 			System.out.println("finished highlighting shape");
@@ -634,51 +634,56 @@ public class Main {
 		Iteration ++;
 		System.out.println("Iteration "+Iteration);
 		System.out.println("Testing ("+StartX+","+StartY+")"+" which is: "+SimilarityArray[StartX][StartY]);
-		testedArray.add(CurrentPoint);
-		
-		try {
-			if(!ALContainsArray(testedArray,CurrentPoint) && StartX + 1 < width && StartY < height && StartX + 1>= 0 && StartY >= 0) {
-				if(SimilarityArray[StartX+1][StartY] > blockThresh) {
-					edgeArray = tailCheck4(SimilarityArray,StartX+1,StartY,edgeArray,width,height);
-				} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
-					edgeArray.add(CurrentPoint);
+		if(!ALContainsArray(testedArray,CurrentPoint)) {
+			testedArray.add(CurrentPoint);
+			try {
+				if(StartX + 1 < width && StartY < height && StartX + 1>= 0 && StartY >= 0) {
+					System.out.println("Trying ("+(StartX+1)+","+StartY+")"+" which is: "+SimilarityArray[StartX][StartY]);
+					if(SimilarityArray[StartX+1][StartY] > blockThresh) {
+						edgeArray = tailCheck4(SimilarityArray,StartX+1,StartY,edgeArray,width,height);
+					} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
+						edgeArray.add(CurrentPoint);
+					}
 				}
+			}catch (ArrayIndexOutOfBoundsException e) {
+				e.printStackTrace();
 			}
-		}catch (ArrayIndexOutOfBoundsException e) {
-			e.printStackTrace();
-		}
-		try {
-			if(!ALContainsArray(testedArray,CurrentPoint) && StartX< width && StartY + 1< height && StartX>= 0 && StartY + 1>= 0) {
-				if(SimilarityArray[StartX][StartY+1] > blockThresh) {
-					edgeArray = tailCheck4(SimilarityArray,StartX,StartY+1,edgeArray,width,height);
-				} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
-					edgeArray.add(CurrentPoint);
+			try {
+				if(StartX< width && StartY + 1< height && StartX>= 0 && StartY + 1>= 0) {
+					System.out.println("Trying ("+StartX+","+(StartY+1)+")"+" which is: "+SimilarityArray[StartX][StartY]);
+					if(SimilarityArray[StartX][StartY+1] > blockThresh) {
+						edgeArray = tailCheck4(SimilarityArray,StartX,StartY+1,edgeArray,width,height);
+					} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
+						edgeArray.add(CurrentPoint);
+					}
 				}
+			}catch (ArrayIndexOutOfBoundsException e) {
+				e.printStackTrace();
 			}
-		}catch (ArrayIndexOutOfBoundsException e) {
-			e.printStackTrace();
-		}
-		try {
-			if(!ALContainsArray(testedArray,CurrentPoint) && StartX - 1< width && StartY < height && StartX - 1>= 0 && StartY >= 0 && Iteration != 0) {
-				if(SimilarityArray[StartX-1][StartY] > blockThresh) {
-					edgeArray = tailCheck4(SimilarityArray,StartX-1,StartY,edgeArray,width,height);
-				} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
-					edgeArray.add(CurrentPoint);
+			try {
+				if(StartX - 1< width && StartY < height && StartX - 1>= 0 && StartY >= 0 && Iteration != 0) {
+					System.out.println("Trying ("+(StartX-1)+","+StartY+")"+" which is: "+SimilarityArray[StartX][StartY]);
+					if(SimilarityArray[StartX-1][StartY] > blockThresh) {
+						edgeArray = tailCheck4(SimilarityArray,StartX-1,StartY,edgeArray,width,height);
+					} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
+						edgeArray.add(CurrentPoint);
+					}
 				}
+			}catch (ArrayIndexOutOfBoundsException e) {
+				e.printStackTrace();
 			}
-		}catch (ArrayIndexOutOfBoundsException e) {
-			e.printStackTrace();
-		}
-		try {
-			if(!ALContainsArray(testedArray,CurrentPoint) && StartX < width && StartY - 1 < height && StartX>= 0 && StartY - 1>= 0 && Iteration != 0) {
-				if(SimilarityArray[StartX][StartY-1] > blockThresh) {
-					edgeArray = tailCheck4(SimilarityArray,StartX,StartY-1,edgeArray,width,height);
-				} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
-					edgeArray.add(CurrentPoint);
+			try {
+				if(StartX < width && StartY - 1 < height && StartX>= 0 && StartY - 1>= 0 && Iteration != 0) {
+					System.out.println("Trying ("+StartX+","+(StartY-1)+")"+" which is: "+SimilarityArray[StartX][StartY]);
+					if(SimilarityArray[StartX][StartY-1] > blockThresh) {
+						edgeArray = tailCheck4(SimilarityArray,StartX,StartY-1,edgeArray,width,height);
+					} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
+						edgeArray.add(CurrentPoint);
+					}
 				}
+			}catch (ArrayIndexOutOfBoundsException e) {
+				e.printStackTrace();
 			}
-		}catch (ArrayIndexOutOfBoundsException e) {
-			e.printStackTrace();
 		}
 		System.out.println("returning");
 		return edgeArray;
