@@ -5,7 +5,6 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.LinkedList;
 
 
@@ -17,15 +16,18 @@ public class Main {
 	final int colorThreshold = 5;
 	final int neighborMinThreshold = 5; //five or less or stack overflow 
 	final int neighborMaxThreshold = 25;
-	final int blockThresh = 22;
-	final int differentiator = 2;
+	final int blockThresh = 23;
+	final int differentiator = 0;
 	final int spaceAroundCrop = 25;
 	final int spArCr = spaceAroundCrop;
-	private ArrayList<ArrayList<Integer>> slimeTrail = new ArrayList<ArrayList<Integer>>();
 	
+	private ArrayList<ArrayList<Integer>> slimeTrail = new ArrayList<ArrayList<Integer>>();
+	private ArrayList<int[]> testedArray = new ArrayList<>();
+	private int Iteration;
 	public Main(){
-		String shapeName = "triangle4";
-		BufferedImage best = loadImage("./res/raw/" + shapeName + ".png");
+		String shapeName = "twoshapes";
+		String fileExtension = "bmp";
+		BufferedImage best = loadImage("./res/raw/" + shapeName + "." + fileExtension);
 		ArrayList<BufferedImage> tests = cropToBlock(convertGrayscale(best));
 //		BufferedImage test = convertGrayscale(best);
 		int index = -1;
@@ -521,11 +523,14 @@ public class Main {
 		}
 		return listAll;
 	}
+
+
 	private ArrayList<BufferedImage> cropToBlock(BufferedImage input) {
+		int wi = input.getWidth(), hi = input.getHeight();
 		ArrayList<BufferedImage> out = new ArrayList<BufferedImage>();
 		int[][] numSim = new int[input.getHeight()][input.getWidth()];
-		for(int x = 0; x < input.getWidth() - 0; x ++ ) {
-			for(int y = 0; y < input.getHeight() - 0; y ++) {
+		for(int x = 0; x < wi - 0; x ++ ) {
+			for(int y = 0; y < hi - 0; y ++) {
 				int numSimilar = 0;
 				int total = 0;
 				for(int i = -2; i < 3; i ++) {
@@ -562,7 +567,6 @@ public class Main {
 		ArrayList<Integer> miYArray = new ArrayList<>();
 		ArrayList<Integer> maXArray = new ArrayList<>();
 		ArrayList<Integer> maYArray = new ArrayList<>();
-		ArrayList<int[]> tested = new ArrayList<>();
 		for(int i = 2; i < numSim.length-2; i ++) {
 			for(int j = 2; j < numSim[i].length-2; j ++) {
 				int current = numSim[i][j];
@@ -584,11 +588,13 @@ public class Main {
 				//System.out.println("Current is "+current);
 				if(current < blockThresh - differentiator) {
 					ArrayList<int[]> edges = new ArrayList<>();
-					
+					Iteration = 0;
 					System.out.println("Testing "+i+","+j);
-					edges = tailCheck4(numSim,i,j,edges,tested,0);
+					edges = tailCheck4(numSim,i,j,edges,wi,hi);
 					ArrayList<Integer> xs = new ArrayList<>();
 					ArrayList<Integer> ys = new ArrayList<>();
+					xs.add(i);
+					ys.add(j);
 					for(int[] e : edges) {
 						xs.add(e[0]);
 						ys.add(e[1]);
@@ -615,7 +621,7 @@ public class Main {
 		}
 		return out;
 	}
-	private ArrayList<int[]> tailCheck4(int[][] SimilarityArray, int StartX, int StartY, ArrayList<int[]> edgeArray,ArrayList<int[]> testedArray,int Iteration) {
+	private ArrayList<int[]> tailCheck4(int[][] SimilarityArray, int StartX, int StartY, ArrayList<int[]> edgeArray, int width, int height) {
 		int[] CurrentPoint = {StartX, StartY};
 		/*for(int[] o : testedArray) {
 			for(int i : o) {
@@ -623,39 +629,56 @@ public class Main {
 			}
 			System.out.println("has been tested");
 		}*/
+		
+		
 		Iteration ++;
 		System.out.println("Iteration "+Iteration);
-		if(!ALContainsArray(testedArray,CurrentPoint)) {
-			System.out.println("Testing ("+StartX+","+StartY+")"+" which is: "+SimilarityArray[StartX][StartY]);
-			testedArray.add(CurrentPoint);
-			try {
+		System.out.println("Testing ("+StartX+","+StartY+")"+" which is: "+SimilarityArray[StartX][StartY]);
+		testedArray.add(CurrentPoint);
+		
+		try {
+			if(!ALContainsArray(testedArray,CurrentPoint) && StartX + 1 < width && StartY < height && StartX + 1>= 0 && StartY >= 0) {
 				if(SimilarityArray[StartX+1][StartY] > blockThresh) {
-					edgeArray = tailCheck4(SimilarityArray,StartX+1,StartY,edgeArray,testedArray, Iteration);
+					edgeArray = tailCheck4(SimilarityArray,StartX+1,StartY,edgeArray,width,height);
 				} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
 					edgeArray.add(CurrentPoint);
 				}
-			}catch (ArrayIndexOutOfBoundsException e) {}
-			try {
+			}
+		}catch (ArrayIndexOutOfBoundsException e) {
+			e.printStackTrace();
+		}
+		try {
+			if(!ALContainsArray(testedArray,CurrentPoint) && StartX< width && StartY + 1< height && StartX>= 0 && StartY + 1>= 0) {
 				if(SimilarityArray[StartX][StartY+1] > blockThresh) {
-					edgeArray = tailCheck4(SimilarityArray,StartX,StartY+1,edgeArray,testedArray, Iteration);
+					edgeArray = tailCheck4(SimilarityArray,StartX,StartY+1,edgeArray,width,height);
 				} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
 					edgeArray.add(CurrentPoint);
 				}
-			}catch (ArrayIndexOutOfBoundsException e) {}
-			try {
+			}
+		}catch (ArrayIndexOutOfBoundsException e) {
+			e.printStackTrace();
+		}
+		try {
+			if(!ALContainsArray(testedArray,CurrentPoint) && StartX - 1< width && StartY < height && StartX - 1>= 0 && StartY >= 0 && Iteration != 0) {
 				if(SimilarityArray[StartX-1][StartY] > blockThresh) {
-					edgeArray = tailCheck4(SimilarityArray,StartX-1,StartY,edgeArray,testedArray, Iteration);
+					edgeArray = tailCheck4(SimilarityArray,StartX-1,StartY,edgeArray,width,height);
 				} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
 					edgeArray.add(CurrentPoint);
 				}
-			}catch (ArrayIndexOutOfBoundsException e) {}
-			try {
+			}
+		}catch (ArrayIndexOutOfBoundsException e) {
+			e.printStackTrace();
+		}
+		try {
+			if(!ALContainsArray(testedArray,CurrentPoint) && StartX < width && StartY - 1 < height && StartX>= 0 && StartY - 1>= 0 && Iteration != 0) {
 				if(SimilarityArray[StartX][StartY-1] > blockThresh) {
-					edgeArray = tailCheck4(SimilarityArray,StartX,StartY-1,edgeArray,testedArray, Iteration);
+					edgeArray = tailCheck4(SimilarityArray,StartX,StartY-1,edgeArray,width,height);
 				} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
 					edgeArray.add(CurrentPoint);
 				}
-			}catch (ArrayIndexOutOfBoundsException e) {}
+			}
+		}catch (ArrayIndexOutOfBoundsException e) {
+			e.printStackTrace();
 		}
 		System.out.println("returning");
 		return edgeArray;
