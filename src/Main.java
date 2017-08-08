@@ -34,11 +34,14 @@ public class Main implements ActionListener {
 	final int differentiator = 2;
 	final int spaceAroundCrop = 25;
 	final int spArCr = spaceAroundCrop;
+	int sizeThreshold = 500;
 	private ArrayList<ArrayList<Integer>> slimeTrail = new ArrayList<ArrayList<Integer>>();
+	private ArrayList<int[]> tracedOutline = new ArrayList<int[]>();
 	
 	final Color slimeTrailColor = new Color(255, 0, 0);
 	final Color endPointColor = new Color(0, 255, 0);
-	ArrayList<ArrayList<Integer>> endpoints = null;
+	ArrayList<int[]> endpoints = null;
+	ArrayList<ArrayList<int[]>> allEndpoints = new ArrayList<>();
 	
 	//set up GUI
 	JFrame frame = new JFrame("Shapes");
@@ -67,6 +70,8 @@ public class Main implements ActionListener {
 	JLabel stddevLabel = new JLabel("Angle Std Dev: ");
 	JLabel anglesLabel = new JLabel("Angle Average: ");
 	JLabel tempLabel = new JLabel("Temp: ");
+	
+	ArrayList<double[]> pixelSimilarity = new ArrayList<>();
 	
 	
 	public Main(){
@@ -230,6 +235,7 @@ public class Main implements ActionListener {
 				if(endpoints != null){
 					endpoints.clear();
 				}
+				allEndpoints.clear();
 				BufferedImage blurred;
 				if(blur.isSelected()){
 					blurred = gaussianBlur(raw);
@@ -246,33 +252,46 @@ public class Main implements ActionListener {
 //					modifiedOutline = erodeImage(modifiedOutline);
 //				}
 				BufferedImage processed = highlightShape(modifiedOutline, raw);
-				endpoints = findEndpoints(modifiedOutline);
-				//display slime trail as outline
-				for (int k = 0; k < slimeTrail.size(); k += 1){
-					processed.setRGB(slimeTrail.get(k).get(0), slimeTrail.get(k).get(1), slimeTrailColor.getRGB());
-				}
-				//display endpoints as dots
-				if(endpoints != null){
-					for (int i = 0; i < endpoints.size(); i ++){
-						ArrayList<Integer> temp = endpoints.get(i);
-						int endpointWidth = 1;
-						for (int j = -endpointWidth; j <= endpointWidth; j++) {
-							for (int k = -endpointWidth; k <= endpointWidth; k++) {
-								outline.setRGB((int)temp.get(0)+j, (int)temp.get(1)+k, endPointColor.getRGB());
-								modifiedOutline.setRGB((int)temp.get(0)+j, (int)temp.get(1)+k, endPointColor.getRGB());
-								processed.setRGB((int)temp.get(0)+j, (int)temp.get(1)+k, endPointColor.getRGB());
-								if (i == endpoints.size() -1){
-									//shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(255,255,255)).getRGB());
-								}
-							}
+				//endpoints = findEndpoints(modifiedOutline);
+				ArrayList<int[]> vertices = findVertices(modifiedOutline);
+				allEndpoints.add(vertices);
+//				//display slime trail as outline
+//				for (int k = 0; k < slimeTrail.size(); k += 1){
+//					processed.setRGB(slimeTrail.get(k).get(0), slimeTrail.get(k).get(1), slimeTrailColor.getRGB());
+//				}
+//				//display endpoints as dots
+//				if(endpoints != null){
+//					for (int i = 0; i < endpoints.size(); i ++){
+//						ArrayList<Integer> temp = endpoints.get(i);
+//						int endpointWidth = 1;
+//						for (int j = -endpointWidth; j <= endpointWidth; j++) {
+//							for (int k = -endpointWidth; k <= endpointWidth; k++) {
+//								outline.setRGB((int)temp.get(0)+j, (int)temp.get(1)+k, endPointColor.getRGB());
+//								modifiedOutline.setRGB((int)temp.get(0)+j, (int)temp.get(1)+k, endPointColor.getRGB());
+//								processed.setRGB((int)temp.get(0)+j, (int)temp.get(1)+k, endPointColor.getRGB());
+//								if (i == endpoints.size() -1){
+//									//shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(255,255,255)).getRGB());
+//								}
+//							}
+//						}
+//						System.out.println("X:" + temp.get(0) + " Y: " + temp.get(1));
+//					}
+//				}
+				for (int i = 0; i < vertices.size(); i++) {
+					int endpointWidth = 1;
+					for (int j = -endpointWidth; j <= endpointWidth; j++) {
+						for (int k = -endpointWidth; k <= endpointWidth; k++) {
+							outline.setRGB(vertices.get(i)[0]+j, vertices.get(i)[1]+k, endPointColor.getRGB());
+							modifiedOutline.setRGB(vertices.get(i)[0]+j, vertices.get(i)[1]+k, endPointColor.getRGB());
+							processed.setRGB(vertices.get(i)[0]+j, vertices.get(i)[1]+k, endPointColor.getRGB());
 						}
-						System.out.println("X:" + temp.get(0) + " Y: " + temp.get(1));
 					}
+					System.out.println("X:" + vertices.get(i)[0] + " Y: " + vertices.get(i)[1]);
 				}
 				panel.setImages(raw, blurred, outline, modifiedOutline, processed);
 				//if the auto-calculate checkbox is selected, calculate data
 				if(autocalculate.isSelected()){
-					calculateData();
+					calculateData(allEndpoints);
 				}
 				frame.repaint();
 			}
@@ -282,7 +301,7 @@ public class Main implements ActionListener {
 		}
 		//display processed data of shape
 		else if(event.getSource().equals(calculate)){
-			calculateData();
+			calculateData(allEndpoints);
 		}
 		//save the current displayed image
 		else if(event.getSource().equals(savefile)){
@@ -484,6 +503,7 @@ public class Main implements ActionListener {
 	
 	//finds the edges of the shapes in an image
 	private BufferedImage findEdges(BufferedImage img){
+		pixelSimilarity.clear();
 		int width = img.getWidth();
 		int height = img.getHeight();
 		BufferedImage convertedImage = new BufferedImage(width, height, img.getType()); 
@@ -498,6 +518,8 @@ public class Main implements ActionListener {
 						totalDifference += checkSimilarity(pixel1, pixel2);
 						}
 					}
+				double[] currentPixel = {xpos, ypos, totalDifference};
+				pixelSimilarity.add(currentPixel);
 				//mark the pixel if color difference is greater than specified threshold
 				if(totalDifference > colorThreshold){
 					convertedImage.setRGB(xpos, ypos, Color.RED.getRGB());
@@ -509,6 +531,338 @@ public class Main implements ActionListener {
 			}
 		}
 		return convertedImage;
+	}
+	
+//	private ArrayList<int[]> findVerticies(){
+//		ArrayList<int[]> verticies = new ArrayList<int[]>();
+//		double maxDifference = 0;
+//		double mean = 0;
+//		double size = 0;
+//		double stddev = 0;
+//		double precision = 0;
+//		for (int i = 0; i < pixelSimilarity.size(); i++) {
+//			if(pixelSimilarity.get(i)[2] != 0){
+//				maxDifference = Math.max(maxDifference, pixelSimilarity.get(i)[2]);
+//				mean += pixelSimilarity.get(i)[2];
+//				size++;
+//			}
+//		}
+//		mean = mean/size;
+//		//calculate standard deviation
+//		for (int i = 0; i < pixelSimilarity.size(); i++) {
+//			if(pixelSimilarity.get(i)[2] != 0){
+//				stddev += Math.pow((pixelSimilarity.get(i)[2] - mean), 2);
+//			}
+//		}
+//		stddev /= size;
+//		stddev = Math.sqrt(stddev);
+//		precision = maxDifference / 12;
+//		for (int i = 0; i < pixelSimilarity.size(); i++) {
+//			if (pixelSimilarity.get(i)[2] > (maxDifference - stddev/4)) {
+//				int[] currentPixel = {(int) pixelSimilarity.get(i)[0], (int) pixelSimilarity.get(i)[1]};
+//				verticies.add(currentPixel);
+//			}
+//		}
+//		return verticies;
+//	}
+	
+	private ArrayList<int[]> findVertices(BufferedImage outline){
+		tracedOutline.clear();
+		ArrayList<int[]> vertices = new ArrayList<int[]>();
+		int[] startPoint = {-1, -1};
+		int[] nextPoint = {-1, -1, -1};
+		//finds the top-leftmost red pixel and set it to the starting point
+		for (int y = 0; y < outline.getHeight(); y++) {
+			if(startPoint[0] != -1){
+				break;
+			}
+			for (int x = 0; x < outline.getWidth(); x++) {
+				if(outline.getRGB(x, y) == Color.RED.getRGB()){
+					startPoint[0] = x;
+					startPoint[1] = y;
+					break;
+				}
+			}
+		}
+		//no red pixel found
+		if(startPoint[0] == -1){
+			return vertices;
+		}
+		tracedOutline.add(startPoint);
+		nextPoint = getNextPoint(outline, startPoint[0], startPoint[1], 2);
+		//while there is a next point and the next point has not returned to the starting point, draw a single pixel outline around the initial outline
+		while(nextPoint[0] != -1 && !((nextPoint[0] == startPoint[0]) && (nextPoint[1] == startPoint[1]))){
+			tracedOutline.add(nextPoint);
+			nextPoint = getNextPoint(outline, nextPoint[0], nextPoint[1], nextPoint[2]);
+		}
+		int pixelsGrouped = Math.max(10, Math.round(tracedOutline.size() / 30f));
+		System.out.println(pixelsGrouped);
+		ArrayList<int[]> currentCorner = new ArrayList<int[]>();
+		boolean groupContainsVertex = false;
+		//wrap around starting pixels
+		for (int i = 0; i < pixelsGrouped * 2; i++) {
+			tracedOutline.add(nextPoint);
+			nextPoint = getNextPoint(outline, nextPoint[0], nextPoint[1], nextPoint[2]);
+		}
+		//for however many pixels grouped together, add all the different connecting directions to an arraylist
+		for (int i = pixelsGrouped; i < tracedOutline.size() - pixelsGrouped; i++) {
+			ArrayList<Integer> distinctDirections = new ArrayList<Integer>();
+			for (int j = i + 1; j < i + pixelsGrouped; j++) {
+				if(!distinctDirections.contains(tracedOutline.get(j)[2])){
+					distinctDirections.add(tracedOutline.get(j)[2]);
+				}
+			}
+			if(distinctDirections.size() > 2){
+				groupContainsVertex = true;
+				int[] currentPixel = {tracedOutline.get(i+(pixelsGrouped/2))[0], tracedOutline.get(i+(pixelsGrouped/2))[1]};
+				currentCorner.add(currentPixel);
+			}
+			else{
+				//when transitioning to a group that does not contain a vertex from a group that did contain a vertex
+				if(groupContainsVertex == true){
+					int averageX = 0;
+					int averageY = 0;
+//					for (int j = 0; j < currentCorner.size(); j++) {
+//						averageX += currentCorner.get(j)[0];
+//						averageY += currentCorner.get(j)[1];
+//					}
+//					averageX = (int) Math.round(averageX / (double) currentCorner.size());
+//					averageY = (int) Math.round(averageY / (double) currentCorner.size());
+					averageX = currentCorner.get(currentCorner.size()/2)[0];
+					averageY = currentCorner.get(currentCorner.size()/2)[1];
+					int[] currentPixel = {averageX, averageY};
+					vertices.add(currentPixel);
+				}
+				groupContainsVertex = false;
+				currentCorner.clear();
+			}
+		}
+		int initialChecks = 0;
+		int numInitialChecks = 10;
+		double currentAngle = 0;
+		double newAngle = 0;
+//		//put starting pixels at the end of the traced outline
+//		for (int i = 0; i < numInitialChecks; i++) {
+//			int[] currentPixel = {tracedOutline.get(i)[0], tracedOutline.get(i)[1]};
+//			tracedOutline.add(currentPixel);
+//		}
+//		int lineStartIndex = 0;
+//		for (int i = 0; i < tracedOutline.size()-1; i++) {
+//			//set initial angle to the angle between the first two pixels checked
+//			if(initialChecks == 0){
+//				currentAngle = pixelsToAngle(tracedOutline.get(lineStartIndex)[0], tracedOutline.get(lineStartIndex)[1], tracedOutline.get(i+1)[0], tracedOutline.get(i+1)[1]);
+//			}
+//			//allow the angle of the line to stablize
+//			else if(initialChecks < numInitialChecks){
+//				newAngle = pixelsToAngle(tracedOutline.get(lineStartIndex)[0], tracedOutline.get(lineStartIndex)[1], tracedOutline.get(i+1)[0], tracedOutline.get(i+1)[1]);
+//				currentAngle = (currentAngle * 0.5) + (newAngle * 0.5);
+//			}
+//			else{
+//				newAngle = pixelsToAngle(tracedOutline.get(lineStartIndex)[0], tracedOutline.get(lineStartIndex)[1], tracedOutline.get(i+1)[0], tracedOutline.get(i+1)[1]);
+//
+//				//check if angle deviates from current angle
+//				if(getSmallestBearing(currentAngle, newAngle) > 20){
+//					int[] currentPixel = {tracedOutline.get(i)[0], tracedOutline.get(i)[1]};
+//					vertices.add(currentPixel);
+//					initialChecks = 0;
+//					lineStartIndex = i;
+//				}
+//			}
+//			currentAngle = normalizeAngle(currentAngle);
+//			initialChecks++;
+//		}
+		return vertices;
+	}
+	
+	private int checkPattern(ArrayList<Integer> set){
+		double ratio = -1;
+		int differentRatios = 0;
+		int firstChange = 0;
+		for (int i = set.size() % 2 == 0 ? 0 : 1; i < set.size() - 1; i+=2) {
+			if(ratio == -1){
+				ratio = ((double) set.get(i) / (double) set.get(i+1));
+			}
+			else{
+				if(Math.abs(ratio - ((double) set.get(i) / (double) set.get(i+1))) > 0){
+					if(firstChange == 0){
+						firstChange = i;
+					}
+					differentRatios += Math.abs(ratio - ((double) set.get(i) / (double) set.get(i+1)));
+				}
+			}
+		}
+		if(differentRatios > 5){
+			return firstChange;
+		}
+		return -1;
+	}
+	
+	private double pixelsToAngle(int x1, int y1, int x2, int y2){
+		int deltax = x2 - x1;
+		int deltay = y1 - y2;
+		//pixel above
+		if(deltax == 0 && deltay > 0){
+			return 0;
+		}
+		//pixel below
+		else if(deltax == 0 && deltay < 0){
+			return 180;
+		}
+		//pixel to the right
+		else if(deltay == 0 && deltax > 0){
+			return 90;
+		}
+		//pixel to the left
+		else if(deltay == 0 && deltax < 0){
+			return 270;
+		}
+		//quadrant 1
+		else if(deltax > 0 && deltay > 0){
+			return Math.atan(deltax/deltay);
+		}
+		//quadrant 2
+		else if(deltax < 0 && deltay > 0){
+			return 360 + Math.atan(deltax/deltay);
+		}
+		//quadrant 3
+		else if(deltax < 0 && deltay < 0){
+			return 180 + Math.atan(deltax/deltay);
+		}
+		//quadrant 4
+		else if(deltax > 0 && deltay < 0){
+			return 180 + Math.atan(deltax/deltay);
+		}
+		else{
+			System.out.println("fatal error");
+			return -1;
+		}
+		
+	}
+	
+	private double normalizeAngle(double angle){
+		while(angle > 360){
+			angle -= 360;
+		}
+		while(angle < 0){
+			angle += 360;
+		}
+		return angle;
+	}
+	
+	private double getSmallestBearing(double angle1, double angle2){
+		double leftBearing;
+		double rightBearing;
+		if(angle2 >= angle1){
+			leftBearing = angle2 - angle1;
+			rightBearing = 360 - angle2 + angle1;
+		}
+		else{
+			leftBearing = angle1 - angle2;
+			rightBearing = 360 - angle1 + angle2;
+		}
+		return Math.min(leftBearing, rightBearing);
+	}
+	
+	private int[] getNextPoint(BufferedImage outline, int x, int y, int direction){
+		//direction turns clockwise, starts 90 degrees to the left of original direction
+		direction = direction - 2;
+		int numChecks = 0;
+		int[] nextPoint = {-1, -1, -1};
+		while(numChecks < 8){
+			if(direction % 8 == 2){
+				//right
+				if(x+1 < outline.getWidth() && outline.getRGB(x+1, y) == Color.RED.getRGB() && bordersWhite(outline, x+1, y)){
+					nextPoint[0] = x+1;
+					nextPoint[1] = y;
+					nextPoint[2] = 2;
+					break;
+				}
+			}
+			else if(direction % 8 == 3){
+				//bottom right
+				if(x+1 < outline.getWidth() && y+1 < outline.getHeight() && outline.getRGB(x+1, y+1) == Color.RED.getRGB() && bordersWhite(outline, x+1, y+1)){
+					nextPoint[0] = x+1;
+					nextPoint[1] = y+1;
+					nextPoint[2] = 3;
+					break;
+				}
+			}
+			else if(direction % 8 == 4){
+				//bottom
+				if(y+1 < outline.getHeight() && outline.getRGB(x, y+1) == Color.RED.getRGB() && bordersWhite(outline, x, y+1)){
+					nextPoint[0] = x;
+					nextPoint[1] = y+1;
+					nextPoint[2] = 4;
+					break;
+				}
+			}
+			else if(direction % 8 == 5){
+				//bottom left
+				if(x-1 >= 0 && y+1 < outline.getHeight() && outline.getRGB(x-1, y+1) == Color.RED.getRGB() && bordersWhite(outline, x-1, y+1)){
+					nextPoint[0] = x-1;
+					nextPoint[1] = y+1;
+					nextPoint[2] = 5;
+					break;
+				}
+			}
+			else if(direction % 8 == 6){
+				//left
+				if(x-1 >= 0 && outline.getRGB(x-1, y) == Color.RED.getRGB() && bordersWhite(outline, x-1, y)){
+					nextPoint[0] = x-1;
+					nextPoint[1] = y;
+					nextPoint[2] = 6;
+					break;
+				}
+			}
+			else if(direction % 8 == 7){
+				//top left
+				if(x-1 >= 0 && y-1 >= 0 && outline.getRGB(x-1, y-1) == Color.RED.getRGB() && bordersWhite(outline, x-1, y-1)){
+					nextPoint[0] = x-1;
+					nextPoint[1] = y-1;
+					nextPoint[2] = 7;
+					break;
+				}
+			}
+			else if(direction % 8 == 0){
+				//top
+				if(y-1 >= 0 && outline.getRGB(x, y-1) == Color.RED.getRGB() && bordersWhite(outline, x, y-1)){
+					nextPoint[0] = x;
+					nextPoint[1] = y-1;
+					nextPoint[2] = 8;
+					break;
+				}
+			}
+			else if(direction % 8 == 1){
+				//top right
+				if(x+1 < outline.getWidth() && y-1 >= 0 && outline.getRGB(x+1, y-1) == Color.RED.getRGB() && bordersWhite(outline, x+1, y-1)){
+					nextPoint[0] = x+1;
+					nextPoint[1] = y-1;
+					nextPoint[2] = 9;
+					break;
+				}
+			}
+			numChecks++;
+			direction++;
+		}
+		return nextPoint;
+	}
+	
+	private boolean bordersWhite(BufferedImage outline, int x, int y){
+		if(x+1 < outline.getWidth() && outline.getRGB(x+1, y) == Color.WHITE.getRGB()){
+			return true;
+		}
+		else if(x-1 >= 0 && outline.getRGB(x-1, y) == Color.WHITE.getRGB()){
+			return true;
+		}
+		else if(y+1 < outline.getHeight() && outline.getRGB(x, y+1) == Color.WHITE.getRGB()){
+			return true;
+		}
+		else if(y-1 >= 0 && outline.getRGB(x, y-1) == Color.WHITE.getRGB()){
+			return true;
+		}
+		else{
+			return false;
+		}
 	}
 	
 	//dilate an image, used to dilate the red outline of a shape
@@ -629,12 +983,12 @@ public class Main implements ActionListener {
 	
 	//compares the RGB values of two pixels
 	private double checkSimilarity(Color pixel1, Color pixel2){
-		int red1 = pixel1.getRed();
-		int green1 = pixel1.getGreen();
-		int blue1 = pixel1.getBlue();
-		int red2 = pixel2.getRed();
-		int green2 = pixel2.getGreen();
-		int blue2 = pixel2.getBlue();
+		double red1 = pixel1.getRed();
+		double green1 = pixel1.getGreen();
+		double blue1 = pixel1.getBlue();
+		double red2 = pixel2.getRed();
+		double green2 = pixel2.getGreen();
+		double blue2 = pixel2.getBlue();
 		double difference = Math.sqrt(Math.pow(red1 - red2, 2) + Math.pow(green1 - green2, 2) + Math.pow(blue1 - blue2, 2));
 		return difference;
 	}
@@ -660,9 +1014,9 @@ public class Main implements ActionListener {
 		int shapeColorIndex = random.nextInt(colors.size());
 		int backgroundColorIndex = random.nextInt(colors.size());
 		while(backgroundColorIndex == shapeColorIndex){ backgroundColorIndex = random.nextInt(colors.size()); }
-		int shapeType = random.nextInt(2);
+		int shapeType = random.nextInt(3);
 		//generate triangle
-		if(shapeType == 0){
+		if(shapeType < 2){
 			int numPoints = 3;
 			for (int i = 0; i < numPoints; i++) {
 				p.addPoint(random.nextInt(imgsize + 1), random.nextInt(imgsize + 1));
@@ -701,15 +1055,15 @@ public class Main implements ActionListener {
 		int numPoints = 3;
 		int upperBound = 200;
 		//generate random points
-		ArrayList<ArrayList<Integer>> shapePoints = new ArrayList<>();
+		ArrayList<int[]> shapePoints = new ArrayList<>();
 		for (int i = 0; i < numPoints; i++) {
-			ArrayList<Integer> currentPoint = new ArrayList<>();
-			currentPoint.add(random.nextInt(upperBound + 1));
-			currentPoint.add(random.nextInt(upperBound + 1));
+			int[] currentPoint = new int[2];
+			currentPoint[0] = (random.nextInt(upperBound + 1));
+			currentPoint[1] = (random.nextInt(upperBound + 1));
 			shapePoints.add(currentPoint);
-			System.out.println("X: " + shapePoints.get(i).get(0) + " Y: " + shapePoints.get(i).get(1));
+			System.out.println("X: " + shapePoints.get(i)[0] + " Y: " + shapePoints.get(i)[1]);
 		}
-		ArrayList<ArrayList<ArrayList<Integer>>> myList = new ArrayList<ArrayList<ArrayList<Integer>>>();
+		ArrayList<ArrayList<int[]>> myList = new ArrayList<ArrayList<int[]>>();
 		myList.add(shapePoints);
 		//display values: number of points, ratio of width/height, std dev of angles, average of angles
 		Double[] result = processShape(myList)[0];
@@ -720,25 +1074,25 @@ public class Main implements ActionListener {
 	}
 	
 	//Nested Arraylists: Shape >> Endpoints >> X,Y
-	private Double[][] processShape(ArrayList<ArrayList<ArrayList<Integer>>> inArray) {
+	private Double[][] processShape(ArrayList<ArrayList<int[]>> inArray) {
 		int len = inArray.size();
 		int i = 0;
 		Double[][] outArray = new Double[len][4];
 		/// Identify: ratio of max-width:max-height, number of points, std from
 		/// average angle
-		for (ArrayList<ArrayList<Integer>> shape : inArray) {
-			double minX = (double) shape.get(0).get(0), minY = (double) shape.get(0).get(1),
-					maxX = (double) shape.get(0).get(1), maxY = (double) shape.get(0).get(1);
+		for (ArrayList<int[]> shape : inArray) {
+			double minX = (double) shape.get(0)[0], minY = (double) shape.get(0)[0],
+					maxX = (double) shape.get(0)[1], maxY = (double) shape.get(0)[1];
 			Double[] angles = new Double[shape.size()];
 			double sum = 0;
 			int j = 0;
-			for (ArrayList<Integer> points : shape) {
-				double x = (double) points.get(0);
-				double y = (double) points.get(1);
-				double x1 = (double) shape.get(j == shape.size() - 1 ? 0 : j + 1).get(0);
-				double x2 = (double) shape.get(j == 0 ? shape.size() - 1 : j - 1).get(0);
-				double y1 = (double) shape.get(j == shape.size() - 1 ? 0 : j + 1).get(1);
-				double y2 = (double) shape.get(j == 0 ? shape.size() - 1 : j - 1).get(1);
+			for (int[] points : shape) {
+				double x = (double) points[0];
+				double y = (double) points[1];
+				double x1 = (double) shape.get(j == shape.size() - 1 ? 0 : j + 1)[0];
+				double x2 = (double) shape.get(j == 0 ? shape.size() - 1 : j - 1)[0];
+				double y1 = (double) shape.get(j == shape.size() - 1 ? 0 : j + 1)[1];
+				double y2 = (double) shape.get(j == 0 ? shape.size() - 1 : j - 1)[1];
 				minX = x < minX ? x : minX;
 				minY = y < minY ? y : minY;
 				maxX = x > maxX ? x : maxX;
@@ -773,13 +1127,10 @@ public class Main implements ActionListener {
 		return outArray;
 	}
 	
-	public void calculateData(){
-		//if endpoints were found
-		if(endpoints != null && endpoints.size() > 0){
-			ArrayList<ArrayList<ArrayList<Integer>>> myList = new ArrayList<ArrayList<ArrayList<Integer>>>();
-			myList.add(endpoints);
-		
-			Double[][] my = processShape(myList);
+	public void calculateData(ArrayList<ArrayList<int[]>> allEndpoints){
+		//if vertices were found
+		if(allEndpoints != null && allEndpoints.size() > 0){
+			Double[][] my = processShape(allEndpoints);
 			//display values on GUI labels
 			for (Double[] value: my){
 				pointsLabel.setText("Number of Points: " + value[0]);
@@ -861,7 +1212,6 @@ public class Main implements ActionListener {
 	
 	
 	//natalie's code 
-	//have no idea how this works
 	
 	//ik bad form but...
 	private int connectedPixels = 0;
@@ -898,13 +1248,10 @@ public class Main implements ActionListener {
 			real = true;
 		}
 		if (theBlobs.size() > 0){
-			int currentBig = 0;
-			int bigIndex = -1;
+			ArrayList<Integer> largeOutlines = new ArrayList<Integer>();
 			for (int i = 0; i < theBlobs.size(); i += 1){ //finds the biggest blob
-				if (theBlobs.get(i).size() > currentBig){
-					
-					currentBig = (int)theBlobs.get(i).size();
-					bigIndex = i;
+				if (theBlobs.get(i).size() > sizeThreshold){
+					largeOutlines.add(i);
 				}
 			}
 	
@@ -914,12 +1261,13 @@ public class Main implements ActionListener {
 					returnME.setRGB(i, k, Color.WHITE.getRGB());
 				}
 			}
-			for (int k = 0; k < theBlobs.get(bigIndex).size(); k+=1 ){ //sets selected pixels to red
-				int x = theBlobs.get(bigIndex).get(k).get(0);
-				int y = theBlobs.get(bigIndex).get(k).get(1);
-				returnME.setRGB(x, y, Color.RED.getRGB());
+			for (int i = 0; i < largeOutlines.size(); i++) {
+				for (int k = 0; k < theBlobs.get(largeOutlines.get(i)).size(); k+=1 ){ //sets selected pixels to red
+					int x = theBlobs.get(largeOutlines.get(i)).get(k).get(0);
+					int y = theBlobs.get(largeOutlines.get(i)).get(k).get(1);
+					returnME.setRGB(x, y, Color.RED.getRGB());
+				}
 			}
-			System.out.println("about to return");
 			return returnME;
 		}
 		
