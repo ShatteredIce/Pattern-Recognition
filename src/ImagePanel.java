@@ -1,8 +1,10 @@
+import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
@@ -20,10 +22,14 @@ public class ImagePanel extends JPanel{
 	private Image mod_outline_scaled = null;
 	private Image overlay_scaled = null;
 	private int imgType = 0;
+	private int selectedShape = 0;
 	private int imgScaledHeight = 0;
 	private int imgScaledWidth = 0;
 	private int lastHeight = 0;
 	private int lastWidth = 0;
+	final Color endPointColor = new Color(0, 255, 0);
+	final Color selectedPointColor = new Color(0, 0, 255);
+	ArrayList<ArrayList<int[]>> allEndpoints = new ArrayList<>();
 	
 	public ImagePanel(){
 		super();
@@ -42,6 +48,7 @@ public class ImagePanel extends JPanel{
 		mod_outline_scaled = newmodoutline.getScaledInstance(imgScaledWidth,imgScaledHeight,BufferedImage.SCALE_SMOOTH);
 		overlay_scaled = newoverlay.getScaledInstance(imgScaledWidth,imgScaledHeight,BufferedImage.SCALE_SMOOTH);
 		//imgType = 0;
+		selectedShape = 0;
 	}
 	
 	public void setImageDimensions(BufferedImage image){
@@ -59,8 +66,43 @@ public class ImagePanel extends JPanel{
 		}
 	}
 	
+	public void drawVertex(){
+		for (int p = 0; p < allEndpoints.size(); p++) {
+			ArrayList<int[]> vertices = allEndpoints.get(p);
+			for (int i = 0; i < vertices.size(); i++) {
+				int endpointWidth = 1;
+				for (int j = -endpointWidth; j <= endpointWidth; j++) {
+					for (int k = -endpointWidth; k <= endpointWidth; k++) {
+						if(p == selectedShape){
+							outline.setRGB(vertices.get(i)[0]+j, vertices.get(i)[1]+k, selectedPointColor.getRGB());
+							mod_outline.setRGB(vertices.get(i)[0]+j, vertices.get(i)[1]+k, selectedPointColor.getRGB());
+							overlay.setRGB(vertices.get(i)[0]+j, vertices.get(i)[1]+k, selectedPointColor.getRGB());
+						}
+						else{
+							outline.setRGB(vertices.get(i)[0]+j, vertices.get(i)[1]+k, endPointColor.getRGB());
+							mod_outline.setRGB(vertices.get(i)[0]+j, vertices.get(i)[1]+k, endPointColor.getRGB());
+							overlay.setRGB(vertices.get(i)[0]+j, vertices.get(i)[1]+k, endPointColor.getRGB());
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	public void setEndpoints(ArrayList<ArrayList<int[]>> newAllEndpoints){
+		allEndpoints = newAllEndpoints;
+	}
+	
 	public void setImgType(int newImgType){
 		imgType = newImgType;
+	}
+	
+	public void setSelectedShape(int newShape){
+		selectedShape = newShape;
+	}
+	
+	public int getSelectedShape(){
+		return selectedShape;
 	}
 	
 	public BufferedImage getCurrentImage(){
@@ -82,6 +124,7 @@ public class ImagePanel extends JPanel{
 	 @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+        drawVertex();
         if((raw != null) && (lastWidth != this.getWidth() || lastHeight != this.getHeight())){
         	resizeImage();
         }

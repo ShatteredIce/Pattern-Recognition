@@ -39,7 +39,6 @@ public class Main implements ActionListener {
 	private ArrayList<int[]> tracedOutline = new ArrayList<int[]>();
 	
 	final Color slimeTrailColor = new Color(255, 0, 0);
-	final Color endPointColor = new Color(0, 255, 0);
 	ArrayList<int[]> endpoints = null;
 	ArrayList<ArrayList<int[]>> allEndpoints = new ArrayList<>();
 	
@@ -65,6 +64,7 @@ public class Main implements ActionListener {
 	JButton generate = new JButton("Generate");
 	JCheckBox autocalculate = new JCheckBox("Auto-Calc");
 	JCheckBox blur = new JCheckBox("Blur");
+	JButton shapeIdButton = new JButton("Change Selected Shape");
 	JLabel pointsLabel = new JLabel("Number of Points: ");
 	JLabel ratioLabel = new JLabel("Width/Height Ratio: ");
 	JLabel stddevLabel = new JLabel("Angle Std Dev: ");
@@ -138,19 +138,22 @@ public class Main implements ActionListener {
 		east.add(blur, c);
 		blur.setSelected(true);
 		blur.addActionListener(this);
-		c = setGridBagConstraints(c, 0, 2, 0, 0, 0, 0.1);
-		east.add(pointsLabel, c);
+		c = setGridBagConstraints(c, 0, 2, 0, 0, 0, 0);
+		east.add(shapeIdButton, c);
+		shapeIdButton.addActionListener(this);
 		c = setGridBagConstraints(c, 0, 3, 0, 0, 0, 0.1);
-		east.add(ratioLabel, c);
+		east.add(pointsLabel, c);
 		c = setGridBagConstraints(c, 0, 4, 0, 0, 0, 0.1);
-		east.add(stddevLabel, c);
+		east.add(ratioLabel, c);
 		c = setGridBagConstraints(c, 0, 5, 0, 0, 0, 0.1);
+		east.add(stddevLabel, c);
+		c = setGridBagConstraints(c, 0, 6, 0, 0, 0, 0.1);
 		east.add(anglesLabel, c);
-		c = setGridBagConstraints(c, 0, 6, 0, 0, 0, 2);
+		c = setGridBagConstraints(c, 0, 7, 0, 0, 0, 2);
 		east.add(tempLabel, c);
 		c.gridwidth = 2;
 		c.fill = GridBagConstraints.HORIZONTAL;
-		c = setGridBagConstraints(c, 1, 7, 20, 0, 1, 0);
+		c = setGridBagConstraints(c, 1, 8, 20, 0, 1, 0);
 		east.add(generate, c);
 		generate.addActionListener(this);
 		
@@ -276,21 +279,9 @@ public class Main implements ActionListener {
 //						System.out.println("X:" + temp.get(0) + " Y: " + temp.get(1));
 //					}
 //				}
-				for (int p = 0; p < allEndpoints.size(); p++) {
-					ArrayList<int[]> vertices = allEndpoints.get(p);
-					for (int i = 0; i < vertices.size(); i++) {
-						int endpointWidth = 1;
-						for (int j = -endpointWidth; j <= endpointWidth; j++) {
-							for (int k = -endpointWidth; k <= endpointWidth; k++) {
-								outline.setRGB(vertices.get(i)[0]+j, vertices.get(i)[1]+k, endPointColor.getRGB());
-								modifiedOutline.setRGB(vertices.get(i)[0]+j, vertices.get(i)[1]+k, endPointColor.getRGB());
-								processed.setRGB(vertices.get(i)[0]+j, vertices.get(i)[1]+k, endPointColor.getRGB());
-							}
-						}
-						System.out.println("X:" + vertices.get(i)[0] + " Y: " + vertices.get(i)[1]);
-					}
-				}
+				
 				panel.setImages(raw, blurred, outline, modifiedOutline, processed);
+				panel.setEndpoints(allEndpoints);
 				//if the auto-calculate checkbox is selected, calculate data
 				if(autocalculate.isSelected()){
 					calculateData(allEndpoints);
@@ -310,6 +301,25 @@ public class Main implements ActionListener {
 			if(panel.getCurrentImage() != null){
 				storeImage(panel.getCurrentImage(), "./res/processed/savedimage.png");
 			}
+		}
+		//change the shape selected to be calculated
+		else if(event.getSource().equals(shapeIdButton)){
+			if(panel.getSelectedShape() + 1 < allEndpoints.size()){
+				panel.setSelectedShape(panel.getSelectedShape()+1);
+			}
+			else{
+				panel.setSelectedShape(0);
+			}
+			if(autocalculate.isSelected()){
+				calculateData(allEndpoints);
+			}
+			else{
+				pointsLabel.setText("Number of Points: ");
+				ratioLabel.setText("Width/Height Ratio: ");
+				stddevLabel.setText("Angle Std Dev: ");
+				anglesLabel.setText("Angle Average: ");
+			}
+			
 		}
 		//select the raw image to be displayed
 		else if(event.getSource().equals(imgButton1)){
@@ -1123,17 +1133,12 @@ public class Main implements ActionListener {
 	public void calculateData(ArrayList<ArrayList<int[]>> allEndpoints){
 		//if vertices were found
 		if(allEndpoints != null && allEndpoints.size() > 0){
-			Double[][] my = processShape(allEndpoints);
+			Double[][] data = processShape(allEndpoints);
 			//display values on GUI labels
-			for (Double[] value: my){
-				pointsLabel.setText("Number of Points: " + value[0]);
-				ratioLabel.setText("Width/Height Ratio: " + value[1]);
-				stddevLabel.setText("Angle Std Dev: " + value[2]);
-				anglesLabel.setText("Angle Average: " + value[3]);
-				for (Double actualValue : value){
-					System.out.println(actualValue);
-				}
-			}
+			pointsLabel.setText("Number of Points: " + data[panel.getSelectedShape()][0]);
+			ratioLabel.setText("Width/Height Ratio: " + data[panel.getSelectedShape()][1]);
+			stddevLabel.setText("Angle Std Dev: " + data[panel.getSelectedShape()][2]);
+			anglesLabel.setText("Angle Average: " + data[panel.getSelectedShape()][3]);
 		}
 		//reset values
 		else{
