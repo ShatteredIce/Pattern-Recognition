@@ -1211,7 +1211,7 @@ public class Main implements ActionListener {
 	
 	//natalie's code 
 	
-	//ik bad form but...
+	//ik bad form but... 
 	private int connectedPixels = 0;
 	private ArrayList<ArrayList<Integer>> connectedPoints;
 	
@@ -1220,7 +1220,7 @@ public class Main implements ActionListener {
 		BufferedImage modified;
 		int picWidth = edges.getWidth();
 		int picHeight = edges.getHeight();
-		BufferedImage outlines = new BufferedImage(picWidth, picHeight, edges.getType());
+		BufferedImage outlines = new BufferedImage(picWidth, picHeight, edges.getType()); //returned image
 		modified = new BufferedImage(picWidth, picHeight, edges.getType());
 		for (int i = 0; i < picWidth; i +=1){
 			for (int k = 0; k < picHeight; k += 1){
@@ -1245,22 +1245,25 @@ public class Main implements ActionListener {
 		if (theBlobs.size() > 5){
 			real = true;
 		}
+		//adds the outlines that have more points than the size threshold to the returned image
 		if (theBlobs.size() > 0){
 			ArrayList<Integer> largeOutlines = new ArrayList<Integer>();
-			for (int i = 0; i < theBlobs.size(); i += 1){ //finds the biggest blob
+			for (int i = 0; i < theBlobs.size(); i += 1){ 
 				if (theBlobs.get(i).size() > sizeThreshold){
 					largeOutlines.add(i);
 				}
 			}
 	
 			
-			for (int i = 0; i < picWidth; i +=1){ //sets all pixels to white
+			for (int i = 0; i < picWidth; i +=1){ 
+				//sets background to white
 				for (int k = 0; k < picHeight; k += 1){
 					outlines.setRGB(i, k, Color.WHITE.getRGB());
 				}
 			}
 			for (int i = 0; i < largeOutlines.size(); i++) {
-				for (int k = 0; k < theBlobs.get(largeOutlines.get(i)).size(); k+=1 ){ //sets selected pixels to red
+				for (int k = 0; k < theBlobs.get(largeOutlines.get(i)).size(); k+=1 ){
+					//sets pixels in each outline to red on the returned image
 					int x = theBlobs.get(largeOutlines.get(i)).get(k).get(0);
 					int y = theBlobs.get(largeOutlines.get(i)).get(k).get(1);
 					outlines.setRGB(x, y, Color.RED.getRGB());
