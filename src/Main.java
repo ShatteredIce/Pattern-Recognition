@@ -253,8 +253,7 @@ public class Main implements ActionListener {
 //				}
 				BufferedImage processed = highlightShape(modifiedOutline, raw);
 				//endpoints = findEndpoints(modifiedOutline);
-				ArrayList<int[]> vertices = findVertices(modifiedOutline);
-				allEndpoints.add(vertices);
+				allEndpoints = findVertices(modifiedOutline);
 //				//display slime trail as outline
 //				for (int k = 0; k < slimeTrail.size(); k += 1){
 //					processed.setRGB(slimeTrail.get(k).get(0), slimeTrail.get(k).get(1), slimeTrailColor.getRGB());
@@ -277,16 +276,19 @@ public class Main implements ActionListener {
 //						System.out.println("X:" + temp.get(0) + " Y: " + temp.get(1));
 //					}
 //				}
-				for (int i = 0; i < vertices.size(); i++) {
-					int endpointWidth = 1;
-					for (int j = -endpointWidth; j <= endpointWidth; j++) {
-						for (int k = -endpointWidth; k <= endpointWidth; k++) {
-							outline.setRGB(vertices.get(i)[0]+j, vertices.get(i)[1]+k, endPointColor.getRGB());
-							modifiedOutline.setRGB(vertices.get(i)[0]+j, vertices.get(i)[1]+k, endPointColor.getRGB());
-							processed.setRGB(vertices.get(i)[0]+j, vertices.get(i)[1]+k, endPointColor.getRGB());
+				for (int p = 0; p < allEndpoints.size(); p++) {
+					ArrayList<int[]> vertices = allEndpoints.get(p);
+					for (int i = 0; i < vertices.size(); i++) {
+						int endpointWidth = 1;
+						for (int j = -endpointWidth; j <= endpointWidth; j++) {
+							for (int k = -endpointWidth; k <= endpointWidth; k++) {
+								outline.setRGB(vertices.get(i)[0]+j, vertices.get(i)[1]+k, endPointColor.getRGB());
+								modifiedOutline.setRGB(vertices.get(i)[0]+j, vertices.get(i)[1]+k, endPointColor.getRGB());
+								processed.setRGB(vertices.get(i)[0]+j, vertices.get(i)[1]+k, endPointColor.getRGB());
+							}
 						}
+						System.out.println("X:" + vertices.get(i)[0] + " Y: " + vertices.get(i)[1]);
 					}
-					System.out.println("X:" + vertices.get(i)[0] + " Y: " + vertices.get(i)[1]);
 				}
 				panel.setImages(raw, blurred, outline, modifiedOutline, processed);
 				//if the auto-calculate checkbox is selected, calculate data
@@ -566,112 +568,103 @@ public class Main implements ActionListener {
 //		return verticies;
 //	}
 	
-	private ArrayList<int[]> findVertices(BufferedImage outline){
-		tracedOutline.clear();
-		ArrayList<int[]> vertices = new ArrayList<int[]>();
-		int[] startPoint = {-1, -1};
-		int[] nextPoint = {-1, -1, -1};
-		//finds the top-leftmost red pixel and set it to the starting point
-		for (int y = 0; y < outline.getHeight(); y++) {
-			if(startPoint[0] != -1){
-				break;
-			}
-			for (int x = 0; x < outline.getWidth(); x++) {
-				if(outline.getRGB(x, y) == Color.RED.getRGB()){
-					startPoint[0] = x;
-					startPoint[1] = y;
+	private ArrayList<ArrayList<int[]>> findVertices(BufferedImage outline){
+		ArrayList<ArrayList<int[]>> allShapeVertices = new ArrayList<>();
+		boolean finished = false;
+		while(!finished){
+			tracedOutline.clear();
+			ArrayList<int[]> vertices = new ArrayList<int[]>();
+			int[] startPoint = {-1, -1};
+			int[] nextPoint = {-1, -1, -1};
+			//finds the top-leftmost red pixel and set it to the starting point
+			for (int y = 0; y < outline.getHeight(); y++) {
+				if(startPoint[0] != -1){
 					break;
 				}
-			}
-		}
-		//no red pixel found
-		if(startPoint[0] == -1){
-			return vertices;
-		}
-		tracedOutline.add(startPoint);
-		nextPoint = getNextPoint(outline, startPoint[0], startPoint[1], 2);
-		//while there is a next point and the next point has not returned to the starting point, draw a single pixel outline around the initial outline
-		while(nextPoint[0] != -1 && !((nextPoint[0] == startPoint[0]) && (nextPoint[1] == startPoint[1]))){
-			tracedOutline.add(nextPoint);
-			nextPoint = getNextPoint(outline, nextPoint[0], nextPoint[1], nextPoint[2]);
-		}
-		int pixelsGrouped = Math.max(10, Math.round(tracedOutline.size() / 30f));
-		System.out.println(pixelsGrouped);
-		ArrayList<int[]> currentCorner = new ArrayList<int[]>();
-		boolean groupContainsVertex = false;
-		//wrap around starting pixels
-		for (int i = 0; i < pixelsGrouped * 2; i++) {
-			tracedOutline.add(nextPoint);
-			nextPoint = getNextPoint(outline, nextPoint[0], nextPoint[1], nextPoint[2]);
-		}
-		//for however many pixels grouped together, add all the different connecting directions to an arraylist
-		for (int i = pixelsGrouped; i < tracedOutline.size() - pixelsGrouped; i++) {
-			ArrayList<Integer> distinctDirections = new ArrayList<Integer>();
-			for (int j = i + 1; j < i + pixelsGrouped; j++) {
-				if(!distinctDirections.contains(tracedOutline.get(j)[2])){
-					distinctDirections.add(tracedOutline.get(j)[2]);
+				for (int x = 0; x < outline.getWidth(); x++) {
+					if(outline.getRGB(x, y) == Color.RED.getRGB()){
+						startPoint[0] = x;
+						startPoint[1] = y;
+						break;
+					}
 				}
 			}
-			if(distinctDirections.size() > 2){
-				groupContainsVertex = true;
-				int[] currentPixel = {tracedOutline.get(i+(pixelsGrouped/2))[0], tracedOutline.get(i+(pixelsGrouped/2))[1]};
-				currentCorner.add(currentPixel);
+			//no red pixel found
+			if(startPoint[0] == -1){
+				finished = true;
 			}
 			else{
-				//when transitioning to a group that does not contain a vertex from a group that did contain a vertex
-				if(groupContainsVertex == true){
-					int averageX = 0;
-					int averageY = 0;
-//					for (int j = 0; j < currentCorner.size(); j++) {
-//						averageX += currentCorner.get(j)[0];
-//						averageY += currentCorner.get(j)[1];
-//					}
-//					averageX = (int) Math.round(averageX / (double) currentCorner.size());
-//					averageY = (int) Math.round(averageY / (double) currentCorner.size());
-					averageX = currentCorner.get(currentCorner.size()/2)[0];
-					averageY = currentCorner.get(currentCorner.size()/2)[1];
-					int[] currentPixel = {averageX, averageY};
-					vertices.add(currentPixel);
+				tracedOutline.add(startPoint);
+				nextPoint = getNextPoint(outline, startPoint[0], startPoint[1], 2);
+				//while there is a next point and the next point has not returned to the starting point, draw a single pixel outline around the initial outline
+				while(nextPoint[0] != -1 && !((nextPoint[0] == startPoint[0]) && (nextPoint[1] == startPoint[1]))){
+					tracedOutline.add(nextPoint);
+					nextPoint = getNextPoint(outline, nextPoint[0], nextPoint[1], nextPoint[2]);
 				}
-				groupContainsVertex = false;
-				currentCorner.clear();
+				int pixelsGrouped = Math.max(10, Math.round(tracedOutline.size() / 30f));
+				System.out.println(pixelsGrouped);
+				ArrayList<int[]> currentCorner = new ArrayList<int[]>();
+				boolean groupContainsVertex = false;
+				//wrap around starting pixels
+				for (int i = 0; i < pixelsGrouped * 2; i++) {
+					tracedOutline.add(nextPoint);
+					nextPoint = getNextPoint(outline, nextPoint[0], nextPoint[1], nextPoint[2]);
+				}
+				//for however many pixels grouped together, add all the different connecting directions to an arraylist
+				for (int i = pixelsGrouped; i < tracedOutline.size() - pixelsGrouped; i++) {
+					ArrayList<Integer> distinctDirections = new ArrayList<Integer>();
+					for (int j = i + 1; j < i + pixelsGrouped; j++) {
+						if(!distinctDirections.contains(tracedOutline.get(j)[2])){
+							distinctDirections.add(tracedOutline.get(j)[2]);
+						}
+					}
+					if(distinctDirections.size() > 2){
+						groupContainsVertex = true;
+						int[] currentPixel = {tracedOutline.get(i+(pixelsGrouped/2))[0], tracedOutline.get(i+(pixelsGrouped/2))[1]};
+						currentCorner.add(currentPixel);
+					}
+					else{
+						//when transitioning to a group that does not contain a vertex from a group that did contain a vertex
+						if(groupContainsVertex == true){
+							int averageX = 0;
+							int averageY = 0;
+							averageX = currentCorner.get(currentCorner.size()/2)[0];
+							averageY = currentCorner.get(currentCorner.size()/2)[1];
+							int[] currentPixel = {averageX, averageY};
+							vertices.add(currentPixel);
+						}
+						groupContainsVertex = false;
+						currentCorner.clear();
+					}
+				}
+				outline = deleteTracedShape(outline, startPoint[0], startPoint[1]);
+				allShapeVertices.add(vertices);
 			}
 		}
-		int initialChecks = 0;
-		int numInitialChecks = 10;
-		double currentAngle = 0;
-		double newAngle = 0;
-//		//put starting pixels at the end of the traced outline
-//		for (int i = 0; i < numInitialChecks; i++) {
-//			int[] currentPixel = {tracedOutline.get(i)[0], tracedOutline.get(i)[1]};
-//			tracedOutline.add(currentPixel);
-//		}
-//		int lineStartIndex = 0;
-//		for (int i = 0; i < tracedOutline.size()-1; i++) {
-//			//set initial angle to the angle between the first two pixels checked
-//			if(initialChecks == 0){
-//				currentAngle = pixelsToAngle(tracedOutline.get(lineStartIndex)[0], tracedOutline.get(lineStartIndex)[1], tracedOutline.get(i+1)[0], tracedOutline.get(i+1)[1]);
-//			}
-//			//allow the angle of the line to stablize
-//			else if(initialChecks < numInitialChecks){
-//				newAngle = pixelsToAngle(tracedOutline.get(lineStartIndex)[0], tracedOutline.get(lineStartIndex)[1], tracedOutline.get(i+1)[0], tracedOutline.get(i+1)[1]);
-//				currentAngle = (currentAngle * 0.5) + (newAngle * 0.5);
-//			}
-//			else{
-//				newAngle = pixelsToAngle(tracedOutline.get(lineStartIndex)[0], tracedOutline.get(lineStartIndex)[1], tracedOutline.get(i+1)[0], tracedOutline.get(i+1)[1]);
-//
-//				//check if angle deviates from current angle
-//				if(getSmallestBearing(currentAngle, newAngle) > 20){
-//					int[] currentPixel = {tracedOutline.get(i)[0], tracedOutline.get(i)[1]};
-//					vertices.add(currentPixel);
-//					initialChecks = 0;
-//					lineStartIndex = i;
-//				}
-//			}
-//			currentAngle = normalizeAngle(currentAngle);
-//			initialChecks++;
-//		}
-		return vertices;
+		return allShapeVertices;
+	}
+	
+	private BufferedImage deleteTracedShape(BufferedImage outline, int currentx, int currenty){
+		if(outline.getRGB(currentx, currenty) == Color.RED.getRGB()){
+			outline.setRGB(currentx, currenty, Color.WHITE.getRGB());
+		}
+		//recurse right
+		if(currentx + 1 < outline.getWidth() && outline.getRGB(currentx+1, currenty) == Color.RED.getRGB()){
+			outline = deleteTracedShape(outline, currentx+1, currenty);
+		}
+		//recurse up
+		if(currenty + 1 < outline.getHeight() && outline.getRGB(currentx, currenty+1) == Color.RED.getRGB()){
+			outline = deleteTracedShape(outline, currentx, currenty+1);
+		}
+		//recurse left
+		if(currentx - 1 >= 0 && outline.getRGB(currentx-1, currenty) == Color.RED.getRGB()){
+			outline = deleteTracedShape(outline, currentx-1, currenty);
+		}
+		//recurse down
+		if(currenty - 1 >= 0 && outline.getRGB(currentx, currenty-1) == Color.RED.getRGB()){
+			outline = deleteTracedShape(outline, currentx, currenty-1);
+		}
+		return outline;
 	}
 	
 	private int checkPattern(ArrayList<Integer> set){
