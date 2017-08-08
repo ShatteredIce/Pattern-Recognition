@@ -34,7 +34,7 @@ public class Main implements ActionListener {
 	final int differentiator = 2;
 	final int spaceAroundCrop = 25;
 	final int spArCr = spaceAroundCrop;
-	int sizeThreshold = 500;
+	int sizeThreshold = 200;
 	private ArrayList<ArrayList<Integer>> slimeTrail = new ArrayList<ArrayList<Integer>>();
 	private ArrayList<int[]> tracedOutline = new ArrayList<int[]>();
 	
@@ -1217,10 +1217,10 @@ public class Main implements ActionListener {
 	
 	private BufferedImage checkEdges(BufferedImage edges){
 		ArrayList<ArrayList<Integer>> thePoints = findAllPointsOnShapes(edges);
-		
 		BufferedImage modified;
 		int picWidth = edges.getWidth();
 		int picHeight = edges.getHeight();
+		BufferedImage outlines = new BufferedImage(picWidth, picHeight, edges.getType());
 		modified = new BufferedImage(picWidth, picHeight, edges.getType());
 		for (int i = 0; i < picWidth; i +=1){
 			for (int k = 0; k < picHeight; k += 1){
@@ -1253,23 +1253,22 @@ public class Main implements ActionListener {
 				}
 			}
 	
-			BufferedImage returnME = new BufferedImage(picWidth, picHeight, edges.getType());
+			
 			for (int i = 0; i < picWidth; i +=1){ //sets all pixels to white
 				for (int k = 0; k < picHeight; k += 1){
-					returnME.setRGB(i, k, Color.WHITE.getRGB());
+					outlines.setRGB(i, k, Color.WHITE.getRGB());
 				}
 			}
 			for (int i = 0; i < largeOutlines.size(); i++) {
 				for (int k = 0; k < theBlobs.get(largeOutlines.get(i)).size(); k+=1 ){ //sets selected pixels to red
 					int x = theBlobs.get(largeOutlines.get(i)).get(k).get(0);
 					int y = theBlobs.get(largeOutlines.get(i)).get(k).get(1);
-					returnME.setRGB(x, y, Color.RED.getRGB());
+					outlines.setRGB(x, y, Color.RED.getRGB());
 				}
 			}
-			return returnME;
 		}
 		
-		return edges; //not what i want to return i think
+		return outlines;
 	}
 	
 	private void checkEdgesHelper(int x, int y, BufferedImage edges, boolean first){ //recursive
