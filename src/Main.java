@@ -50,6 +50,9 @@ public class Main implements ActionListener {
 	JCheckBox autocalculate = new JCheckBox("Auto-Calc");
 	JCheckBox blur = new JCheckBox("Blur");
 	JButton shapeIdButton = new JButton("Change Selected Shape");
+	JLabel noiseSizeLabel = new JLabel("Size Threshold: ");
+	JButton increaseSizeThreshold = new JButton("Increase");
+	JButton decreaseSizeThreshold = new JButton("Decrease");
 	JLabel pointsLabel = new JLabel("Number of Points: ");
 	JLabel ratioLabel = new JLabel("Width/Height Ratio: ");
 	JLabel stddevLabel = new JLabel("Angle Std Dev: ");
@@ -127,19 +130,28 @@ public class Main implements ActionListener {
 		east.add(shapeIdButton, c);
 		shapeIdButton.addActionListener(this);
 		shapeIdButton.setEnabled(false);
-		c = setGridBagConstraints(c, 0, 3, 0, 0, 0, 0.1);
-		east.add(pointsLabel, c);
-		c = setGridBagConstraints(c, 0, 4, 0, 0, 0, 0.1);
-		east.add(ratioLabel, c);
+		c = setGridBagConstraints(c, 0, 3, 0, 10, 0, 0);
+		noiseSizeLabel.setText("Size Threshold: " + sizeThreshold);
+		east.add(noiseSizeLabel, c);
+		c = setGridBagConstraints(c, 0, 4, 0, 0, 0, 0);
+		east.add(increaseSizeThreshold, c);
+		increaseSizeThreshold.addActionListener(this);
+		c = setGridBagConstraints(c, 1, 4, 0, 0, 0, 0);
+		east.add(decreaseSizeThreshold, c);
+		decreaseSizeThreshold.addActionListener(this);
 		c = setGridBagConstraints(c, 0, 5, 0, 0, 0, 0.1);
-		east.add(stddevLabel, c);
+		east.add(pointsLabel, c);
 		c = setGridBagConstraints(c, 0, 6, 0, 0, 0, 0.1);
+		east.add(ratioLabel, c);
+		c = setGridBagConstraints(c, 0, 7, 0, 0, 0, 0.1);
+		east.add(stddevLabel, c);
+		c = setGridBagConstraints(c, 0, 8, 0, 0, 0, 0.1);
 		east.add(anglesLabel, c);
-		c = setGridBagConstraints(c, 0, 7, 0, 0, 0, 2);
+		c = setGridBagConstraints(c, 0, 9, 0, 0, 0, 2);
 		east.add(tempLabel, c);
 		c.gridwidth = 2;
 		c.fill = GridBagConstraints.HORIZONTAL;
-		c = setGridBagConstraints(c, 1, 8, 20, 0, 1, 0);
+		c = setGridBagConstraints(c, 1, 10, 20, 0, 1, 0);
 		east.add(generate, c);
 		generate.addActionListener(this);
 		
@@ -231,6 +243,16 @@ public class Main implements ActionListener {
 				anglesLabel.setText("Angle Average: ");
 			}
 			
+		}
+		else if(event.getSource().equals(increaseSizeThreshold)){
+			sizeThreshold += 50;
+			noiseSizeLabel.setText("Size Threshold: " + sizeThreshold);
+		}
+		else if(event.getSource().equals(decreaseSizeThreshold)){
+			if(sizeThreshold != 0){
+				sizeThreshold -= 50;
+				noiseSizeLabel.setText("Size Threshold: " + sizeThreshold);
+			}
 		}
 		//select the raw image to be displayed
 		else if(event.getSource().equals(imgButton1)){
@@ -483,8 +505,10 @@ public class Main implements ActionListener {
 				BufferedImage[] copiedImages = copyTracedShape(outline, noiseRemoved, startPoint[0], startPoint[1]);
 				outline = copiedImages[0];
 				noiseRemoved = copiedImages[1];
-				allShapeVertices.add(vertices);
 				//check to see if three consecutive vertices are collinear, if true remove the middle one from the vertices list
+				if(vertices.size() == 1){
+					vertices.clear();
+				}
 				for (int firstIndex = 0; firstIndex < vertices.size(); firstIndex++) {
 					int secondIndex = firstIndex + 1;
 					int thirdIndex = firstIndex + 2;
@@ -517,6 +541,7 @@ public class Main implements ActionListener {
 						}
 					}
 				}
+				allShapeVertices.add(vertices);
 			}
 		}
 		for (int x = 0; x < outline.getWidth(); x++) {
