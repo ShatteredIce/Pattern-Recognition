@@ -34,7 +34,7 @@ public class Main implements ActionListener {
 	final int differentiator = 2;
 	final int spaceAroundCrop = 25;
 	final int spArCr = spaceAroundCrop;
-	int sizeThreshold = 200;
+	int sizeThreshold = 500;
 	private ArrayList<ArrayList<Integer>> slimeTrail = new ArrayList<ArrayList<Integer>>();
 	private ArrayList<int[]> tracedOutline = new ArrayList<int[]>();
 	
@@ -141,6 +141,7 @@ public class Main implements ActionListener {
 		c = setGridBagConstraints(c, 0, 2, 0, 0, 0, 0);
 		east.add(shapeIdButton, c);
 		shapeIdButton.addActionListener(this);
+		shapeIdButton.setEnabled(false);
 		c = setGridBagConstraints(c, 0, 3, 0, 0, 0, 0.1);
 		east.add(pointsLabel, c);
 		c = setGridBagConstraints(c, 0, 4, 0, 0, 0, 0.1);
@@ -282,6 +283,13 @@ public class Main implements ActionListener {
 				
 				panel.setImages(raw, blurred, outline, modifiedOutline, processed);
 				panel.setEndpoints(allEndpoints);
+				//if there is no shape or one shape, disable button to change shape, else enable button
+				if (allEndpoints.size() <= 1) {
+					shapeIdButton.setEnabled(false);
+				}
+				else{
+					shapeIdButton.setEnabled(true);
+				}
 				//if the auto-calculate checkbox is selected, calculate data
 				if(autocalculate.isSelected()){
 					calculateData(allEndpoints);
@@ -545,39 +553,6 @@ public class Main implements ActionListener {
 		return convertedImage;
 	}
 	
-//	private ArrayList<int[]> findVerticies(){
-//		ArrayList<int[]> verticies = new ArrayList<int[]>();
-//		double maxDifference = 0;
-//		double mean = 0;
-//		double size = 0;
-//		double stddev = 0;
-//		double precision = 0;
-//		for (int i = 0; i < pixelSimilarity.size(); i++) {
-//			if(pixelSimilarity.get(i)[2] != 0){
-//				maxDifference = Math.max(maxDifference, pixelSimilarity.get(i)[2]);
-//				mean += pixelSimilarity.get(i)[2];
-//				size++;
-//			}
-//		}
-//		mean = mean/size;
-//		//calculate standard deviation
-//		for (int i = 0; i < pixelSimilarity.size(); i++) {
-//			if(pixelSimilarity.get(i)[2] != 0){
-//				stddev += Math.pow((pixelSimilarity.get(i)[2] - mean), 2);
-//			}
-//		}
-//		stddev /= size;
-//		stddev = Math.sqrt(stddev);
-//		precision = maxDifference / 12;
-//		for (int i = 0; i < pixelSimilarity.size(); i++) {
-//			if (pixelSimilarity.get(i)[2] > (maxDifference - stddev/4)) {
-//				int[] currentPixel = {(int) pixelSimilarity.get(i)[0], (int) pixelSimilarity.get(i)[1]};
-//				verticies.add(currentPixel);
-//			}
-//		}
-//		return verticies;
-//	}
-	
 	private ArrayList<ArrayList<int[]>> findVertices(BufferedImage outline){
 		ArrayList<ArrayList<int[]>> allShapeVertices = new ArrayList<>();
 		boolean finished = false;
@@ -661,8 +636,25 @@ public class Main implements ActionListener {
 					}
 					double firstAngle = pixelsToAngle(vertices.get(firstIndex)[0], vertices.get(firstIndex)[1], vertices.get(secondIndex)[0], vertices.get(secondIndex)[1]);
 					double secondAngle = pixelsToAngle(vertices.get(secondIndex)[0], vertices.get(secondIndex)[1], vertices.get(thirdIndex)[0], vertices.get(thirdIndex)[1]);
-					if(getSmallestBearing(firstAngle, secondAngle) < 1){
-						vertices.remove(secondIndex);
+					//less accuracy if the second pixel is close to the first
+					if((Math.abs(vertices.get(secondIndex)[0] - vertices.get(firstIndex)[0]) + Math.abs(vertices.get(secondIndex)[1] - vertices.get(firstIndex)[1])) < 20){
+						if(getSmallestBearing(firstAngle, secondAngle) < 15){
+							vertices.remove(secondIndex);
+							firstIndex--;
+						}
+					}
+					//less accuracy if the second pixel is close to the third
+					else if((Math.abs(vertices.get(secondIndex)[0] - vertices.get(thirdIndex)[0]) + Math.abs(vertices.get(secondIndex)[1] - vertices.get(thirdIndex)[1])) < 20){
+						if(getSmallestBearing(firstAngle, secondAngle) < 15){
+							vertices.remove(secondIndex);
+							firstIndex--;
+						}
+					}
+					else{
+						if(getSmallestBearing(firstAngle, secondAngle) < 10){
+							vertices.remove(secondIndex);
+							firstIndex--;
+						}
 					}
 				}
 			}
