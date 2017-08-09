@@ -14,12 +14,12 @@ public class ImagePanel extends JPanel{
 	private BufferedImage raw = null;
 	private BufferedImage blurred = null;
 	private BufferedImage outline = null;
-	private BufferedImage mod_outline = null;
+	private BufferedImage endpoints = null;
 	private BufferedImage overlay = null;
 	private Image raw_scaled = null;
 	private Image blurred_scaled = null;
 	private Image outline_scaled = null;
-	private Image mod_outline_scaled = null;
+	private Image endpoints_scaled = null;
 	private Image overlay_scaled = null;
 	private int imgType = 0;
 	private int selectedShape = 0;
@@ -39,13 +39,13 @@ public class ImagePanel extends JPanel{
 		raw = newraw;
 		blurred = newblurred;
 		outline = newoutline;
-		mod_outline = newmodoutline;
+		endpoints = newmodoutline;
 		overlay = newoverlay;
 		setImageDimensions(newraw);
 		raw_scaled =  newraw.getScaledInstance(imgScaledWidth,imgScaledHeight,BufferedImage.SCALE_SMOOTH);
 		blurred_scaled =  newblurred.getScaledInstance(imgScaledWidth,imgScaledHeight,BufferedImage.SCALE_SMOOTH);
 		outline_scaled = newoutline.getScaledInstance(imgScaledWidth,imgScaledHeight,BufferedImage.SCALE_SMOOTH);
-		mod_outline_scaled = newmodoutline.getScaledInstance(imgScaledWidth,imgScaledHeight,BufferedImage.SCALE_SMOOTH);
+		endpoints_scaled = newmodoutline.getScaledInstance(imgScaledWidth,imgScaledHeight,BufferedImage.SCALE_SMOOTH);
 		overlay_scaled = newoverlay.getScaledInstance(imgScaledWidth,imgScaledHeight,BufferedImage.SCALE_SMOOTH);
 		//imgType = 0;
 		selectedShape = 0;
@@ -74,13 +74,11 @@ public class ImagePanel extends JPanel{
 				for (int j = -endpointWidth; j <= endpointWidth; j++) {
 					for (int k = -endpointWidth; k <= endpointWidth; k++) {
 						if(p == selectedShape){
-							outline.setRGB(vertices.get(i)[0]+j, vertices.get(i)[1]+k, selectedPointColor.getRGB());
-							mod_outline.setRGB(vertices.get(i)[0]+j, vertices.get(i)[1]+k, selectedPointColor.getRGB());
+							endpoints.setRGB(vertices.get(i)[0]+j, vertices.get(i)[1]+k, selectedPointColor.getRGB());
 							overlay.setRGB(vertices.get(i)[0]+j, vertices.get(i)[1]+k, selectedPointColor.getRGB());
 						}
 						else{
-							outline.setRGB(vertices.get(i)[0]+j, vertices.get(i)[1]+k, endPointColor.getRGB());
-							mod_outline.setRGB(vertices.get(i)[0]+j, vertices.get(i)[1]+k, endPointColor.getRGB());
+							endpoints.setRGB(vertices.get(i)[0]+j, vertices.get(i)[1]+k, endPointColor.getRGB());
 							overlay.setRGB(vertices.get(i)[0]+j, vertices.get(i)[1]+k, endPointColor.getRGB());
 						}
 					}
@@ -114,7 +112,7 @@ public class ImagePanel extends JPanel{
 		case 2:
 			return outline;
 		case 3:
-			return mod_outline;
+			return endpoints;
 		case 4:
 			return overlay;
 		}
@@ -139,7 +137,7 @@ public class ImagePanel extends JPanel{
         	g.drawImage(outline_scaled, 0, 0, this); 
         	break;
         case 3:
-        	g.drawImage(mod_outline_scaled, 0, 0, this); 
+        	g.drawImage(endpoints_scaled, 0, 0, this); 
         	break;
         case 4:
         	g.drawImage(overlay_scaled, 0, 0, this); 
@@ -151,7 +149,7 @@ public class ImagePanel extends JPanel{
 		setImageDimensions(raw);
 		raw_scaled =  raw.getScaledInstance(imgScaledWidth,imgScaledHeight,BufferedImage.SCALE_SMOOTH);
 		outline_scaled = outline.getScaledInstance(imgScaledWidth,imgScaledHeight,BufferedImage.SCALE_SMOOTH);
-		mod_outline_scaled = mod_outline.getScaledInstance(imgScaledWidth,imgScaledHeight,BufferedImage.SCALE_SMOOTH);
+		endpoints_scaled = endpoints.getScaledInstance(imgScaledWidth,imgScaledHeight,BufferedImage.SCALE_SMOOTH);
 		blurred_scaled = blurred.getScaledInstance(imgScaledWidth,imgScaledHeight,BufferedImage.SCALE_SMOOTH);
 		overlay_scaled = overlay.getScaledInstance(imgScaledWidth,imgScaledHeight,BufferedImage.SCALE_SMOOTH);
 	}

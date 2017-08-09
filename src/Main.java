@@ -23,7 +23,7 @@ public class Main implements ActionListener {
 	
 	final Random random = new Random();
 	final int colorThreshold = 400;
-	int sizeThreshold = 500;
+	int sizeThreshold = 50;
 	private ArrayList<int[]> tracedOutline = new ArrayList<int[]>();
 	ArrayList<ArrayList<int[]>> allEndpoints = new ArrayList<>();
 	
@@ -39,7 +39,7 @@ public class Main implements ActionListener {
 	JButton imgButton1 = new JButton("Raw");
 	JButton imgButton2 = new JButton("Blur");
 	JButton imgButton3 = new JButton("Outline");
-	JButton imgButton4 = new JButton("Dilate+Erode");
+	JButton imgButton4 = new JButton("Endpoints");
 	JButton imgButton5 = new JButton("Processed");
 	//east container
 	Container east = new Container();
@@ -177,12 +177,17 @@ public class Main implements ActionListener {
 				else{
 					blurred = raw;
 				}
-				BufferedImage outline = checkEdges(findEdges(blurred));
-				BufferedImage modifiedOutline = erodeImage(dilateImage(outline));
-				BufferedImage processed = highlightShape(modifiedOutline, raw);
-				allEndpoints = findVertices(modifiedOutline);
+				BufferedImage outline = (erodeImage(dilateImage(findEdges(blurred))));
+				BufferedImage endpoints = new BufferedImage(outline.getWidth(), outline.getHeight(), outline.getType());
+				for (int x = 0; x < outline.getWidth(); x++) {
+					for (int y = 0; y < outline.getHeight(); y++) {
+						endpoints.setRGB(x, y, outline.getRGB(x, y));
+					}
+				}
+				BufferedImage processed = highlightShape(outline, raw);
+				allEndpoints = findVertices(endpoints);
 				
-				panel.setImages(raw, blurred, outline, modifiedOutline, processed);
+				panel.setImages(raw, blurred, outline, endpoints, processed);
 				panel.setEndpoints(allEndpoints);
 				//if there is no shape or one shape, disable button to change shape, else enable button
 				if (allEndpoints.size() <= 1) {
@@ -402,6 +407,7 @@ public class Main implements ActionListener {
 	//find the vertices of all the shapes in the image
 	private ArrayList<ArrayList<int[]>> findVertices(BufferedImage outline){
 		ArrayList<ArrayList<int[]>> allShapeVertices = new ArrayList<>();
+		BufferedImage noiseRemoved = new BufferedImage(outline.getWidth(), outline.getHeight(), outline.getType());
 		boolean finished = false;
 		while(!finished){
 			tracedOutline.clear();
@@ -432,6 +438,11 @@ public class Main implements ActionListener {
 				while(nextPoint[0] != -1 && !((nextPoint[0] == startPoint[0]) && (nextPoint[1] == startPoint[1]))){
 					tracedOutline.add(nextPoint);
 					nextPoint = getNextPoint(outline, nextPoint[0], nextPoint[1], nextPoint[2]);
+				}
+				//remove noise
+				if(tracedOutline.size() < sizeThreshold){
+					outline = deleteTracedShape(outline, startPoint[0], startPoint[1]);
+					continue;
 				}
 				int pixelsGrouped = Math.max(10, Math.round(tracedOutline.size() / 30f));
 				System.out.println(pixelsGrouped);
@@ -469,7 +480,9 @@ public class Main implements ActionListener {
 						currentCorner.clear();
 					}
 				}
-				outline = deleteTracedShape(outline, startPoint[0], startPoint[1]);
+				BufferedImage[] copiedImages = copyTracedShape(outline, noiseRemoved, startPoint[0], startPoint[1]);
+				outline = copiedImages[0];
+				noiseRemoved = copiedImages[1];
 				allShapeVertices.add(vertices);
 				//check to see if three consecutive vertices are collinear, if true remove the middle one from the vertices list
 				for (int firstIndex = 0; firstIndex < vertices.size(); firstIndex++) {
@@ -506,6 +519,11 @@ public class Main implements ActionListener {
 				}
 			}
 		}
+		for (int x = 0; x < outline.getWidth(); x++) {
+			for (int y = 0; y < outline.getHeight(); y++) {
+				outline.setRGB(x, y, noiseRemoved.getRGB(x, y));
+			}
+		}
 		return allShapeVertices;
 	}
 	
@@ -531,6 +549,32 @@ public class Main implements ActionListener {
 			outline = deleteTracedShape(outline, currentx, currenty-1);
 		}
 		return outline;
+	}
+	
+	//copies the red outline of one shape from the first image to the second image
+	private BufferedImage[] copyTracedShape(BufferedImage outline, BufferedImage copy, int currentx, int currenty){
+		BufferedImage[] processedImages = {outline, copy};
+		if(outline.getRGB(currentx, currenty) == Color.RED.getRGB()){
+			outline.setRGB(currentx, currenty, Color.WHITE.getRGB());
+			copy.setRGB(currentx, currenty, Color.RED.getRGB());
+		}
+		//recurse right
+		if(currentx + 1 < outline.getWidth() && outline.getRGB(currentx+1, currenty) == Color.RED.getRGB()){
+			processedImages = copyTracedShape(outline, copy, currentx+1, currenty);
+		}
+		//recurse up
+		if(currenty + 1 < outline.getHeight() && outline.getRGB(currentx, currenty+1) == Color.RED.getRGB()){
+			processedImages = copyTracedShape(outline, copy, currentx, currenty+1);
+		}
+		//recurse left
+		if(currentx - 1 >= 0 && outline.getRGB(currentx-1, currenty) == Color.RED.getRGB()){
+			processedImages = copyTracedShape(outline, copy, currentx-1, currenty);
+		}
+		//recurse down
+		if(currenty - 1 >= 0 && outline.getRGB(currentx, currenty-1) == Color.RED.getRGB()){
+			processedImages = copyTracedShape(outline, copy, currentx, currenty-1);
+		}
+		return processedImages;
 	}
 	
 	//takes the angle between two pixels
@@ -992,126 +1036,4 @@ public class Main implements ActionListener {
 		}
 	}
 	
-	//natalie's code 
-	
-	//ik bad form but... 
-	private int connectedPixels = 0;
-	private ArrayList<ArrayList<Integer>> connectedPoints;
-	
-	private BufferedImage checkEdges(BufferedImage edges){
-		ArrayList<ArrayList<Integer>> thePoints = findAllPointsOnShapes(edges);
-		BufferedImage modified;
-		int picWidth = edges.getWidth();
-		int picHeight = edges.getHeight();
-		BufferedImage outlines = new BufferedImage(picWidth, picHeight, edges.getType()); //returned image
-		modified = new BufferedImage(picWidth, picHeight, edges.getType());
-		for (int i = 0; i < picWidth; i +=1){
-			for (int k = 0; k < picHeight; k += 1){
-				modified.setRGB(i, k, edges.getRGB(i, k));
-			}
-		}
-		ArrayList<ArrayList<ArrayList<Integer>>> theBlobs = new ArrayList<ArrayList<ArrayList<Integer>>>();
-		for (int k = 0; k < thePoints.size(); k += 1){
-			Color myColor = new Color(modified.getRGB(thePoints.get(k).get(0), thePoints.get(k).get(1)));
-			if (myColor.equals(Color.RED)){
-				ArrayList<Integer> eachPoint = thePoints.get(k);
-				connectedPoints = new ArrayList<ArrayList<Integer>>();
-				connectedPixels = 1;
-				connectedPoints.add(eachPoint);
-				checkEdgesHelper(eachPoint.get(0), eachPoint.get(1), modified, true);
-				for (int j = 0; j < connectedPoints.size(); j +=1){
-					modified.setRGB(connectedPoints.get(j).get(0), connectedPoints.get(j).get(1), Color.WHITE.getRGB());
-				}
-				theBlobs.add(connectedPoints);
-			}
-		}
-		
-		//spliced natalie's code here to make it return multiple outlines, not just the largest outline
-		//adds the outlines that have more points than the size threshold to the returned image
-		if (theBlobs.size() > 0){
-			ArrayList<Integer> largeOutlines = new ArrayList<Integer>();
-			for (int i = 0; i < theBlobs.size(); i += 1){ 
-				if (theBlobs.get(i).size() > sizeThreshold){
-					largeOutlines.add(i);
-				}
-			}
-	
-			
-			for (int i = 0; i < picWidth; i +=1){ 
-				//sets background to white
-				for (int k = 0; k < picHeight; k += 1){
-					outlines.setRGB(i, k, Color.WHITE.getRGB());
-				}
-			}
-			for (int i = 0; i < largeOutlines.size(); i++) {
-				for (int k = 0; k < theBlobs.get(largeOutlines.get(i)).size(); k+=1 ){
-					//sets pixels in each outline to red on the returned image
-					int x = theBlobs.get(largeOutlines.get(i)).get(k).get(0);
-					int y = theBlobs.get(largeOutlines.get(i)).get(k).get(1);
-					outlines.setRGB(x, y, Color.RED.getRGB());
-				}
-			}
-		}
-		
-		return outlines;
-	}
-	
-	//natalies code begins again here
-	private void checkEdgesHelper(int x, int y, BufferedImage edges, boolean first){ //recursive
-		//add to connectedPixels
-		//add to connectedPoints
-		BufferedImage modified;
-		if (first){
-			int picWidth = edges.getWidth();
-			int picHeight = edges.getHeight();
-			modified = new BufferedImage(picWidth, picHeight, edges.getType());
-			for (int i = 0; i < picWidth; i +=1){
-				for (int k = 0; k < picHeight; k += 1){
-					modified.setRGB(i, k, edges.getRGB(i, k));
-				}
-			}
-		}else{
-			modified = edges;
-		}
-		for (int i = (x - 1); i <= (x + 1); i +=1){
-			for (int k = (y - 1); k <= (y + 1); k += 1){
-				if (i>= 0 && k >= 0 && i < edges.getWidth() && k < edges.getHeight()){ //not off edge
-					if (!(i == x && k == y)){ //not currentpoint
-						Color myC = new Color(edges.getRGB(i, k));
-						if (myC.equals(Color.RED)){
-							connectedPixels += 1;
-							ArrayList<Integer> thePoint = new ArrayList<Integer>();
-							thePoint.add(i);
-							thePoint.add(k);
-							connectedPoints.add(thePoint);
-							modified.setRGB(i, k, Color.WHITE.getRGB());
-							checkEdgesHelper(i, k, modified, false);
-						}			
-					}
-				}			
-			}
-		}	
-	}
-	
-	private ArrayList<ArrayList<Integer>> findAllPointsOnShapes(BufferedImage blackLines){
-		int picWidth = blackLines.getWidth();
-		int picHeight = blackLines.getHeight();
-		Color red = Color.RED;
-		ArrayList<ArrayList<Integer>> listAll = new ArrayList<ArrayList<Integer>>();
-		for (int counterY = 0; counterY < (picHeight) ; counterY += 1){
-    		for (int counterX = 0; counterX < (picWidth) ; counterX += 1){
-    			int originalColor;
-    			originalColor = blackLines.getRGB(counterX, counterY);
-        		Color myColor = new Color(originalColor);
-        		if (myColor.equals(red)){
-        			//this means this "point" is on a side!!
-        			ArrayList<Integer> temporary = new ArrayList<Integer>();
-        			temporary.add(counterX);
-        			temporary.add(counterY);
-        			listAll.add(temporary);
-        		}
-    		}
-		}
-		return listAll;
-	}
 }
