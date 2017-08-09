@@ -649,6 +649,22 @@ public class Main implements ActionListener {
 				}
 				outline = deleteTracedShape(outline, startPoint[0], startPoint[1]);
 				allShapeVertices.add(vertices);
+				//check to see if three consecutive vertices are collinear, if true remove the middle one from the vertices list
+				for (int firstIndex = 0; firstIndex < vertices.size(); firstIndex++) {
+					int secondIndex = firstIndex + 1;
+					int thirdIndex = firstIndex + 2;
+					if(secondIndex >= vertices.size()){
+						secondIndex -= vertices.size();
+					}
+					if(thirdIndex >= vertices.size()){
+						thirdIndex -= vertices.size();
+					}
+					double firstAngle = pixelsToAngle(vertices.get(firstIndex)[0], vertices.get(firstIndex)[1], vertices.get(secondIndex)[0], vertices.get(secondIndex)[1]);
+					double secondAngle = pixelsToAngle(vertices.get(secondIndex)[0], vertices.get(secondIndex)[1], vertices.get(thirdIndex)[0], vertices.get(thirdIndex)[1]);
+					if(getSmallestBearing(firstAngle, secondAngle) < 1){
+						vertices.remove(secondIndex);
+					}
+				}
 			}
 		}
 		return allShapeVertices;
@@ -721,19 +737,19 @@ public class Main implements ActionListener {
 		}
 		//quadrant 1
 		else if(deltax > 0 && deltay > 0){
-			return Math.atan(deltax/deltay);
+			return Math.toDegrees(Math.atan((double) deltax / (double) deltay));
 		}
 		//quadrant 2
 		else if(deltax < 0 && deltay > 0){
-			return 360 + Math.atan(deltax/deltay);
+			return 360 + Math.toDegrees(Math.atan((double) deltax / (double) deltay));
 		}
 		//quadrant 3
 		else if(deltax < 0 && deltay < 0){
-			return 180 + Math.atan(deltax/deltay);
+			return 180 + Math.toDegrees(Math.atan((double) deltax / (double) deltay));
 		}
 		//quadrant 4
 		else if(deltax > 0 && deltay < 0){
-			return 180 + Math.atan(deltax/deltay);
+			return 180 + Math.toDegrees(Math.atan((double) deltax / (double) deltay));
 		}
 		else{
 			System.out.println("fatal error");
@@ -756,12 +772,12 @@ public class Main implements ActionListener {
 		double leftBearing;
 		double rightBearing;
 		if(angle2 >= angle1){
-			leftBearing = angle2 - angle1;
-			rightBearing = 360 - angle2 + angle1;
+			rightBearing = angle2 - angle1;
+			leftBearing = 360 - angle2 + angle1;
 		}
 		else{
-			leftBearing = angle1 - angle2;
-			rightBearing = 360 - angle1 + angle2;
+			rightBearing = angle1 - angle2;
+			leftBearing = 360 - angle1 + angle2;
 		}
 		return Math.min(leftBearing, rightBearing);
 	}
