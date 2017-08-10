@@ -1,2 +1,2 @@
-# Pattern Recognition
-Simple object recognition in Java, using perceptrons.
+# Shape Recognition
+Simple shape recognition in Java, using image manipulation.
