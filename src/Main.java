@@ -181,6 +181,9 @@ public class Main implements ActionListener {
 			}
 			//if raw image exists, create images for outline and processed image
 			if(raw != null){
+				while(raw.getWidth() == -1){
+					
+				}
 				allEndpoints.clear();
 				BufferedImage blurred;
 				if(blur.isSelected()){
@@ -196,8 +199,8 @@ public class Main implements ActionListener {
 						endpoints.setRGB(x, y, outline.getRGB(x, y));
 					}
 				}
-				BufferedImage processed = highlightShape(outline, raw);
 				allEndpoints = findVertices(endpoints);
+				BufferedImage processed = overlayShape(endpoints, raw);
 				
 				panel.setImages(raw, blurred, outline, endpoints, processed);
 				panel.setEndpoints(allEndpoints);
@@ -399,13 +402,31 @@ public class Main implements ActionListener {
 		pixelSimilarity.clear();
 		int width = img.getWidth();
 		int height = img.getHeight();
+		int radius = 2;
 		BufferedImage convertedImage = new BufferedImage(width, height, img.getType()); 
+		//set edges to white
+		for (int y = 0; y < height; y++) {
+			for (int x = 0; x < radius; x++) {
+				convertedImage.setRGB(x, y, Color.WHITE.getRGB());
+			}
+			for (int x = width - radius; x < width; x++) {
+				convertedImage.setRGB(x, y,  Color.WHITE.getRGB());
+			}
+		}
+		for (int x = radius; x < width - radius; x++) {
+			for (int y = 0; y < radius; y++) {
+				convertedImage.setRGB(x, y,  Color.WHITE.getRGB());
+			}
+			for (int y = height - radius; y < height; y++) {
+				convertedImage.setRGB(x, y,  Color.WHITE.getRGB());
+			}
+		}
 		//calculates color difference from neighbors for each inner pixel
-		for(int xpos = 2; xpos < width - 2; xpos++){
-			for(int ypos = 2; ypos < height - 2; ypos++){
+		for(int xpos = radius; xpos < width - radius; xpos++){
+			for(int ypos = radius; ypos < height - radius; ypos++){
 				int totalDifference = 0;
-				for(int i = xpos - 2; i <= xpos + 2; i++){
-					for(int j = ypos - 2; j <= ypos + 2; j++){
+				for(int i = xpos - radius; i <= xpos + radius; i++){
+					for(int j = ypos - radius; j <= ypos + radius; j++){
 						Color pixel1 = new Color(img.getRGB(xpos, ypos));
 						Color pixel2 = new Color(img.getRGB(i, j));
 						totalDifference += checkSimilarity(pixel1, pixel2);
@@ -430,6 +451,12 @@ public class Main implements ActionListener {
 	private ArrayList<ArrayList<int[]>> findVertices(BufferedImage outline){
 		ArrayList<ArrayList<int[]>> allShapeVertices = new ArrayList<>();
 		BufferedImage noiseRemoved = new BufferedImage(outline.getWidth(), outline.getHeight(), outline.getType());
+		for (int x = 0; x < outline.getWidth(); x++) {
+			for (int y = 0; y < outline.getHeight(); y++) {
+				noiseRemoved.setRGB(x, y, outline.getRGB(x, y));
+			}
+		}
+		BufferedImage outlineTrace = new BufferedImage(outline.getWidth(), outline.getHeight(), outline.getType());
 		boolean finished = false;
 		while(!finished){
 			tracedOutline.clear();
@@ -464,16 +491,32 @@ public class Main implements ActionListener {
 				//remove noise
 				if(tracedOutline.size() < sizeThreshold){
 					outline = deleteTracedShape(outline, startPoint[0], startPoint[1]);
+					noiseRemoved = deleteTracedShape(noiseRemoved, startPoint[0], startPoint[1]);
 					continue;
 				}
+				//add traced outline to displayed image
+				for (int i = 0; i < tracedOutline.size(); i++) {
+					outlineTrace.setRGB(tracedOutline.get(i)[0], tracedOutline.get(i)[1], Color.GREEN.getRGB());
+				}
 				int pixelsGrouped = Math.max(10, Math.round(tracedOutline.size() / 30f));
-				System.out.println(pixelsGrouped);
+				//System.out.println(pixelsGrouped);
 				ArrayList<int[]> currentCorner = new ArrayList<int[]>();
 				boolean groupContainsVertex = false;
 				//wrap around starting pixels
 				for (int i = 0; i < pixelsGrouped * 2; i++) {
+					if(nextPoint[0] == -1){
+						break;
+					}
 					tracedOutline.add(nextPoint);
-					nextPoint = getNextPoint(outline, nextPoint[0], nextPoint[1], nextPoint[2]);
+//					try{
+						nextPoint = getNextPoint(outline, nextPoint[0], nextPoint[1], nextPoint[2]);
+//					}
+//					catch(Exception e){
+//						e.printStackTrace();
+//						System.out.println("outline dimensions: " + outline.getWidth() + ", " + outline.getHeight());
+//						System.out.println("x: " + nextPoint[0] + " y: " + nextPoint[1] + " dir: " + nextPoint[2]);
+//						System.out.println(tracedOutline.size());
+//					}
 				}
 				//for however many pixels grouped together, add all the different connecting directions to an arraylist
 				for (int i = pixelsGrouped; i < tracedOutline.size() - pixelsGrouped; i++) {
@@ -502,51 +545,59 @@ public class Main implements ActionListener {
 						currentCorner.clear();
 					}
 				}
-				BufferedImage[] copiedImages = copyTracedShape(outline, noiseRemoved, startPoint[0], startPoint[1]);
-				outline = copiedImages[0];
-				noiseRemoved = copiedImages[1];
+				outline = deleteTracedShape(outline, startPoint[0], startPoint[1]);
 				//check to see if three consecutive vertices are collinear, if true remove the middle one from the vertices list
-				if(vertices.size() == 1){
-					vertices.clear();
+				if(vertices.size() > 1){
+					for (int firstIndex = 0; firstIndex < vertices.size(); firstIndex++) {
+						int secondIndex = firstIndex + 1;
+						int thirdIndex = firstIndex + 2;
+						if(secondIndex >= vertices.size()){
+							secondIndex -= vertices.size();
+						}
+						if(thirdIndex >= vertices.size()){
+							thirdIndex -= vertices.size();
+						}
+						double firstAngle = pixelsToAngle(vertices.get(firstIndex)[0], vertices.get(firstIndex)[1], vertices.get(secondIndex)[0], vertices.get(secondIndex)[1]);
+						double secondAngle = pixelsToAngle(vertices.get(secondIndex)[0], vertices.get(secondIndex)[1], vertices.get(thirdIndex)[0], vertices.get(thirdIndex)[1]);
+						//less accuracy if the second pixel is close to the first
+						if((Math.abs(vertices.get(secondIndex)[0] - vertices.get(firstIndex)[0]) + Math.abs(vertices.get(secondIndex)[1] - vertices.get(firstIndex)[1])) < 20){
+							if(getSmallestBearing(firstAngle, secondAngle) < 15){
+								vertices.remove(secondIndex);
+								firstIndex--;
+							}
+						}
+						//less accuracy if the second pixel is close to the third
+						else if((Math.abs(vertices.get(secondIndex)[0] - vertices.get(thirdIndex)[0]) + Math.abs(vertices.get(secondIndex)[1] - vertices.get(thirdIndex)[1])) < 20){
+							if(getSmallestBearing(firstAngle, secondAngle) < 15){
+								vertices.remove(secondIndex);
+								firstIndex--;
+							}
+						}
+						else{
+							if(getSmallestBearing(firstAngle, secondAngle) < 10){
+								vertices.remove(secondIndex);
+								firstIndex--;
+							}
+						}
+					}
 				}
-				for (int firstIndex = 0; firstIndex < vertices.size(); firstIndex++) {
-					int secondIndex = firstIndex + 1;
-					int thirdIndex = firstIndex + 2;
-					if(secondIndex >= vertices.size()){
-						secondIndex -= vertices.size();
-					}
-					if(thirdIndex >= vertices.size()){
-						thirdIndex -= vertices.size();
-					}
-					double firstAngle = pixelsToAngle(vertices.get(firstIndex)[0], vertices.get(firstIndex)[1], vertices.get(secondIndex)[0], vertices.get(secondIndex)[1]);
-					double secondAngle = pixelsToAngle(vertices.get(secondIndex)[0], vertices.get(secondIndex)[1], vertices.get(thirdIndex)[0], vertices.get(thirdIndex)[1]);
-					//less accuracy if the second pixel is close to the first
-					if((Math.abs(vertices.get(secondIndex)[0] - vertices.get(firstIndex)[0]) + Math.abs(vertices.get(secondIndex)[1] - vertices.get(firstIndex)[1])) < 20){
-						if(getSmallestBearing(firstAngle, secondAngle) < 15){
-							vertices.remove(secondIndex);
-							firstIndex--;
-						}
-					}
-					//less accuracy if the second pixel is close to the third
-					else if((Math.abs(vertices.get(secondIndex)[0] - vertices.get(thirdIndex)[0]) + Math.abs(vertices.get(secondIndex)[1] - vertices.get(thirdIndex)[1])) < 20){
-						if(getSmallestBearing(firstAngle, secondAngle) < 15){
-							vertices.remove(secondIndex);
-							firstIndex--;
-						}
-					}
-					else{
-						if(getSmallestBearing(firstAngle, secondAngle) < 10){
-							vertices.remove(secondIndex);
-							firstIndex--;
-						}
-					}
+				if(vertices.size() > 1){
+					allShapeVertices.add(vertices);
 				}
-				allShapeVertices.add(vertices);
 			}
 		}
+		//draw the outlines of the larger shapes (non-noise) onto the original image
 		for (int x = 0; x < outline.getWidth(); x++) {
 			for (int y = 0; y < outline.getHeight(); y++) {
 				outline.setRGB(x, y, noiseRemoved.getRGB(x, y));
+			}
+		}
+		//draw the trace around each shape onto the original image
+		for (int x = 0; x < outlineTrace.getWidth(); x++) {
+			for (int y = 0; y < outlineTrace.getHeight(); y++) {
+				if(outlineTrace.getRGB(x, y) == Color.GREEN.getRGB()){
+					outline.setRGB(x, y, outlineTrace.getRGB(x, y));
+				}
 			}
 		}
 		return allShapeVertices;
@@ -557,24 +608,166 @@ public class Main implements ActionListener {
 		if(outline.getRGB(currentx, currenty) == Color.RED.getRGB()){
 			outline.setRGB(currentx, currenty, Color.WHITE.getRGB());
 		}
-		//recurse right
+		boolean recurseRight = false;
+		boolean recurseUp = false;
+		boolean recurseLeft = false;
+		boolean recurseDown = false;
+		//checks right pixel
 		if(currentx + 1 < outline.getWidth() && outline.getRGB(currentx+1, currenty) == Color.RED.getRGB()){
+			outline.setRGB(currentx + 1, currenty, Color.WHITE.getRGB());
+			recurseRight = true;
+		}
+		//checks above pixel
+		if(currenty + 1 < outline.getHeight() && outline.getRGB(currentx, currenty+1) == Color.RED.getRGB()){
+			outline.setRGB(currentx, currenty + 1, Color.WHITE.getRGB());
+			recurseUp = true;
+		}
+		//checks left pixel
+		if(currentx - 1 >= 0 && outline.getRGB(currentx-1, currenty) == Color.RED.getRGB()){
+			outline.setRGB(currentx - 1, currenty, Color.WHITE.getRGB());
+			recurseLeft = true;
+		}
+		//checks bottom pixel
+		if(currenty - 1 >= 0 && outline.getRGB(currentx, currenty-1) == Color.RED.getRGB()){
+			outline.setRGB(currentx, currenty - 1, Color.WHITE.getRGB());
+			recurseDown = true;
+		}
+		//recurse right
+		if(currentx + 1 < outline.getWidth() && recurseRight == true){
 			outline = deleteTracedShape(outline, currentx+1, currenty);
 		}
 		//recurse up
-		if(currenty + 1 < outline.getHeight() && outline.getRGB(currentx, currenty+1) == Color.RED.getRGB()){
+		if(currenty + 1 < outline.getHeight() && recurseUp == true){
 			outline = deleteTracedShape(outline, currentx, currenty+1);
 		}
 		//recurse left
-		if(currentx - 1 >= 0 && outline.getRGB(currentx-1, currenty) == Color.RED.getRGB()){
+		if(currentx - 1 >= 0 && recurseLeft == true){
 			outline = deleteTracedShape(outline, currentx-1, currenty);
 		}
 		//recurse down
-		if(currenty - 1 >= 0 && outline.getRGB(currentx, currenty-1) == Color.RED.getRGB()){
+		if(currenty - 1 >= 0 && recurseDown == true){
 			outline = deleteTracedShape(outline, currentx, currenty-1);
 		}
 		return outline;
 	}
+	
+//	private BufferedImage deleteTracedShape(BufferedImage outline, int startx, int starty){
+//		BufferedImage processedImage = new BufferedImage(outline.getWidth(), outline.getHeight(), outline.getType());
+//		for (int x = 0; x < outline.getWidth(); x++) {
+//			for (int y = 0; y < outline.getHeight(); y++) {
+//				processedImage.setRGB(x, y, outline.getRGB(x, y));
+//			}
+//		}
+//		ArrayList<int[]> toBeCheckedPixels = new ArrayList<>();
+//		ArrayList<int[]> checkedPixels = new ArrayList<>();
+//		int[] startPoint = {startx, starty};
+//		toBeCheckedPixels.add(startPoint);
+//		for (int i = 0; i < toBeCheckedPixels.size(); i++) {
+//			int[] currentPixel = toBeCheckedPixels.get(i);
+//			boolean added = false;
+//			//add start point
+//			if (checkedPixels.size() == 0) {
+//				checkedPixels.add(currentPixel);
+//				added = true;
+//			}
+//			else if(processedImage.getRGB(currentPixel[0], currentPixel[1]) == Color.RED.getRGB()){
+//				added = true;
+//			}
+//			if(added == true){
+//				//add right pixel to unchecked
+//				if(currentPixel[0] + 1 < processedImage.getWidth()){
+//					boolean alreadyChecked = false;
+//					int[] rightPixel = {currentPixel[0] + 1, currentPixel[1]};
+//					//already in checked pixels array
+//					for (int j = 0; j < checkedPixels.size(); j++) {
+//						if(rightPixel[0] + 1 == checkedPixels.get(j)[0] && rightPixel[1] == checkedPixels.get(j)[1]){
+//							alreadyChecked = true;
+//						}
+//					}
+//					//already in to be checked pixels array
+//					for (int j = 0; j < toBeCheckedPixels.size(); j++) {
+//						if(rightPixel[0] == toBeCheckedPixels.get(j)[0] && rightPixel[1] == toBeCheckedPixels.get(j)[1]){
+//							alreadyChecked = true;
+//						}
+//					}
+//					//if not already checked or in to be checked array, add pixel to to be checked array
+//					if(!alreadyChecked){
+//						toBeCheckedPixels.add(rightPixel);
+//					}
+//				}
+//				//add top pixel to unchecked
+//				if(currentPixel[1] + 1 < processedImage.getHeight()){
+//					boolean alreadyChecked = false;
+//					int[] topPixel = {currentPixel[0], currentPixel[1] + 1};
+//					//already in checked pixels array
+//					for (int j = 0; j < checkedPixels.size(); j++) {
+//						if(topPixel[0] + 1 == checkedPixels.get(j)[0] && topPixel[1] == checkedPixels.get(j)[1]){
+//							alreadyChecked = true;
+//						}
+//					}
+//					//already in to be checked pixels array
+//					for (int j = 0; j < toBeCheckedPixels.size(); j++) {
+//						if(topPixel[0] == toBeCheckedPixels.get(j)[0] && topPixel[1] == toBeCheckedPixels.get(j)[1]){
+//							alreadyChecked = true;
+//						}
+//					}
+//					//if not already checked or in to be checked array, add pixel to to be checked array
+//					if(!alreadyChecked){
+//						toBeCheckedPixels.add(topPixel);
+//					}
+//				}
+//				//add left pixel to unchecked
+//				if(currentPixel[0] - 1 >= 0){
+//					boolean alreadyChecked = false;
+//					int[] leftPixel = {currentPixel[0] - 1, currentPixel[1]};
+//					//already in checked pixels array
+//					for (int j = 0; j < checkedPixels.size(); j++) {
+//						if(leftPixel[0] + 1 == checkedPixels.get(j)[0] && leftPixel[1] == checkedPixels.get(j)[1]){
+//							alreadyChecked = true;
+//						}
+//					}
+//					//already in to be checked pixels array
+//					for (int j = 0; j < toBeCheckedPixels.size(); j++) {
+//						if(leftPixel[0] == toBeCheckedPixels.get(j)[0] && leftPixel[1] == toBeCheckedPixels.get(j)[1]){
+//							alreadyChecked = true;
+//						}
+//					}
+//					//if not already checked or in to be checked array, add pixel to to be checked array
+//					if(!alreadyChecked){
+//						toBeCheckedPixels.add(leftPixel);
+//					}
+//				}
+//				//add bottom pixel to unchecked
+//				if(currentPixel[1] - 1 >= 0){
+//					boolean alreadyChecked = false;
+//					int[] bottomPixel = {currentPixel[0], currentPixel[1] - 1};
+//					//already in checked pixels array
+//					for (int j = 0; j < checkedPixels.size(); j++) {
+//						if(bottomPixel[0] + 1 == checkedPixels.get(j)[0] && bottomPixel[1] == checkedPixels.get(j)[1]){
+//							alreadyChecked = true;
+//						}
+//					}
+//					//already in to be checked pixels array
+//					for (int j = 0; j < toBeCheckedPixels.size(); j++) {
+//						if(bottomPixel[0] == toBeCheckedPixels.get(j)[0] && bottomPixel[1] == toBeCheckedPixels.get(j)[1]){
+//							alreadyChecked = true;
+//						}
+//					}
+//					//if not already checked or in to be checked array, add pixel to to be checked array
+//					if(!alreadyChecked){
+//						toBeCheckedPixels.add(bottomPixel);
+//					}
+//				}
+//			}
+//			checkedPixels.add(toBeCheckedPixels.get(i));
+//			toBeCheckedPixels.remove(i);
+//			i--;
+//		}
+//		for (int i = 0; i < checkedPixels.size(); i++) {
+//			processedImage.setRGB(checkedPixels.get(i)[0], checkedPixels.get(i)[1], Color.WHITE.getRGB());
+//		}
+//		return processedImage;
+//	}
 	
 	//copies the red outline of one shape from the first image to the second image
 	private BufferedImage[] copyTracedShape(BufferedImage outline, BufferedImage copy, int currentx, int currenty){
@@ -866,30 +1059,24 @@ public class Main implements ActionListener {
 		return eroded;
 	}
 	
-	//natalies function, has no usefulness as of now but it looks nice
-	private BufferedImage highlightShape(BufferedImage blackLines, BufferedImage real){
-		BufferedImage highlight = new BufferedImage(real.getWidth(), real.getHeight(), real.getType());
-		int picWidth = highlight.getWidth();
-		int picHeight = highlight.getHeight();
-		
-		for (int i = 0; i < picWidth; i +=1){
-			for (int k = 0; k < picHeight; k += 1){
-				highlight.setRGB(i, k, real.getRGB(i, k));
+	//overlays the outline of the shapes on the original image
+	private BufferedImage overlayShape(BufferedImage outline, BufferedImage original){
+		BufferedImage overlay = new BufferedImage(original.getWidth(), original.getHeight(), original.getType());
+		//copy original image to overlay
+		for (int x = 0; x < original.getWidth(); x++){
+			for (int y = 0; y < original.getHeight(); y++){
+				overlay.setRGB(x, y, original.getRGB(x, y));
 			}
 		}
-		Color red = Color.RED;
-		Color trace = Color.CYAN;
-		for (int counterX = 0; counterX < (picWidth) ; counterX += 1){
-    		for (int counterY = 0; counterY < (picHeight) ; counterY += 1){
-    			int originalColor;
-        		originalColor = blackLines.getRGB(counterX, counterY);
-        		Color myColor = new Color(originalColor);
-        		if (myColor.equals(red)){
-        			highlight.setRGB(counterX, counterY, trace.getRGB());
-        		}
-    		}
+		//if pixel in outline is not white, copy it to the overlay
+		for (int x = 0; x < outline.getWidth(); x++){
+			for (int y = 0; y < outline.getHeight(); y++){
+				if(outline.getRGB(x, y) != Color.WHITE.getRGB()){
+					overlay.setRGB(x, y, outline.getRGB(x, y));
+				}
+			}
 		}
-		return highlight;
+		return overlay;
 	}
 	
 	//compares the RGB values of two pixels
