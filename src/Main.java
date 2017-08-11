@@ -1072,7 +1072,7 @@ public class Main implements ActionListener {
 	private Double[][] processShape(ArrayList<ArrayList<int[]>> inArray) {
 		int len = inArray.size();
 		int i = 0;
-		Double[][] outArray = new Double[len][4];
+		Double[][] outArray = new Double[len][5];
 		/// Identify: number of points, ratio of max-width:max-height, std dev of angles, average angle
 		for (ArrayList<int[]> shape : inArray) {
 			double minX = (double) shape.get(0)[0], minY = (double) shape.get(0)[0],
@@ -1116,6 +1116,21 @@ public class Main implements ActionListener {
 			outArray[i][1] = r;
 			outArray[i][2] = std;
 			outArray[i][3] = avg;
+			//0 is unknown shape, 1 is triangle, 2 is square, 3 is rectangle, 4 is quadrilateral
+			int shapeType = 0;
+			if(shape.size() == 3){
+				shapeType = 1;
+			}
+			else if(shape.size() == 4 && Math.abs(1 - r) < 0.05 && std < 0.1){
+				shapeType = 2;
+			}
+			else if(shape.size() == 4 && std < 0.1){
+				shapeType = 3;
+			}
+			else if(shape.size() == 4){
+				shapeType = 4;
+			}
+			outArray[i][4] = (double) shapeType;
 			i++;
 		}
 		return outArray;
@@ -1135,6 +1150,21 @@ public class Main implements ActionListener {
 			ratioLabel.setText("Width/Height Ratio: " + data[panel.getSelectedShape()][1]);
 			stddevLabel.setText("Angle Std Dev: " + data[panel.getSelectedShape()][2]);
 			anglesLabel.setText("Angle Average: " + data[panel.getSelectedShape()][3]);
+			if(data[panel.getSelectedShape()][4] == 0){
+				statusLabel.setText("Unknown Shape");
+			}
+			else if(data[panel.getSelectedShape()][4] == 1){
+				statusLabel.setText("Triangle Detected");
+			}
+			else if(data[panel.getSelectedShape()][4] == 2){
+				statusLabel.setText("Square Detected");
+			}
+			else if(data[panel.getSelectedShape()][4] == 3){
+				statusLabel.setText("Rectangle Detected");
+			}
+			else if(data[panel.getSelectedShape()][4] == 4){
+				statusLabel.setText("Quadrilateral Detected");
+			}
 		}
 		else{
 			//reset values
@@ -1142,6 +1172,7 @@ public class Main implements ActionListener {
 			ratioLabel.setText("Width/Height Ratio: ");
 			stddevLabel.setText("Angle Std Dev: ");
 			anglesLabel.setText("Angle Average: ");
+			statusLabel.setText("Idle");
 		}
 	}
 	
