@@ -224,8 +224,15 @@ public class Main {
 			double minX = (double) shape.get(0).get(0), minY = (double) shape.get(0).get(1),
 					maxX = (double) shape.get(0).get(1), maxY = (double) shape.get(0).get(1);
 			Double[] angles = new Double[shape.size()];
-			double sum = 0;
+			double sum = 0, sumX = 0, sumY = 0;
 			int j = 0;
+			for (ArrayList<Integer> points : shape) {
+				double x = (double) points.get(0);
+				double y = (double) points.get(1);
+				sumX += x;
+				sumY += y;
+			}
+			double[] center = {sumX / shape.size(), sumY / shape.size()};
 			for (ArrayList<Integer> points : shape) {
 				double x = (double) points.get(0);
 				double y = (double) points.get(1);
@@ -242,6 +249,12 @@ public class Main {
 				double c = Math.sqrt(sqr(x2-x1)+sqr(y2-y1));
 				//System.out.println("Distances 1,2,&3 are"+a+", "+b+", & "+c);
 				double C = Math.acos((sqr(c)-(sqr(a)+sqr(b)))/(-2*a*b));
+				double distToCenter = dist((int)x,(int)y,(int)center[0],(int)center[1]);
+				double[] avg = {(x1+x2)/2, (y1+y2)/2};
+				double avgToCenter = dist((int)avg[0],(int)avg[1],(int)center[0],(int)center[1]);
+				if(avgToCenter > distToCenter) {
+					C = 360 -C;
+				}
 				//System.out.println("Before acos:"+C);
 				angles[j] = C;
 				sum += angles[j];
@@ -882,5 +895,8 @@ public class Main {
 	}
 	private double sqr(double in) {
 		return in * in;
+	}
+	private double dist(int x1,int y1,int x2, int y2) {
+		return Math.sqrt(sqr(y2-y1)+sqr(x2-x1));
 	}
 }
