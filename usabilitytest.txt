@@ -1,18 +1,19 @@
 Project 12 - Shape Recognition
 
-Our goal is to be able to identify shapes in an image.
-Currently, our program is able to load an image and process some data for the image.
+The goal of this project is to be able to identify shapes in an image.
+Currently, the program is able to load an image and process some data for the image.
 
 Usability Test:
+Run the program.
 Type filenames into the textfield and click 'load'.
 Click on 'calculate' to display the shape data.
 
 Working files:
 square.png
-rect4.png
+rect.png
 triangle1.png
-triangle7.png
+triangle7.png (broken by new algorithm)
 triangle8.png
-decagon.png
+decagon.png (broken by new algorithm)
 
 
