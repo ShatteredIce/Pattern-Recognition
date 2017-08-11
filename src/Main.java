@@ -156,9 +156,7 @@ public class Main implements ActionListener {
 		
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setVisible(true);
-		
-		NeuralNetwork net = new NeuralNetwork();
-				
+						
 	}
 
 	public static void main(String[] args) {

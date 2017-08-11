@@ -1,7 +1,7 @@
 Project 12 - Shape Recognition
 
-Our goal is to be able to identify shapes in an image.
-Currently, our program is able to load an image and process some data for the image.
+The goal of this project is to be able to identify shapes in an image.
+Currently, the program is able to load an image and process some data for the image.
 
 Usability Test:
 Run the program.
