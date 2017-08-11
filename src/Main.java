@@ -24,6 +24,8 @@ public class Main implements ActionListener {
 	final Random random = new Random();
 	final int colorThreshold = 400;
 	int sizeThreshold = 50;
+	int pixelsGrouped = 10;
+	boolean usePixelsGrouped = false;
 	private ArrayList<int[]> tracedOutline = new ArrayList<int[]>();
 	ArrayList<ArrayList<int[]>> allEndpoints = new ArrayList<>();
 	ArrayList<double[]> pixelSimilarity = new ArrayList<>();
@@ -54,6 +56,10 @@ public class Main implements ActionListener {
 	JLabel noiseSizeLabel = new JLabel("Size Threshold: ");
 	JButton increaseSizeThreshold = new JButton("Increase");
 	JButton decreaseSizeThreshold = new JButton("Decrease");
+	JLabel pixelsGroupedLabel = new JLabel("Pixels Grouped: ");
+	JButton increasePixelsGrouped = new JButton("Increase");
+	JButton decreasePixelsGrouped = new JButton("Decrease");
+	JButton autoPixelsGrouped = new JButton("Auto");
 	JLabel pointsLabel = new JLabel("Number of Points: ");
 	JLabel ratioLabel = new JLabel("Width/Height Ratio: ");
 	JLabel stddevLabel = new JLabel("Angle Std Dev: ");
@@ -138,19 +144,31 @@ public class Main implements ActionListener {
 		c = setGridBagConstraints(c, 1, 4, 0, 0, 0, 0);
 		east.add(decreaseSizeThreshold, c);
 		decreaseSizeThreshold.addActionListener(this);
-		c = setGridBagConstraints(c, 0, 5, 0, 0, 0, 0.1);
-		east.add(pointsLabel, c);
-		c = setGridBagConstraints(c, 0, 6, 0, 0, 0, 0.1);
-		east.add(ratioLabel, c);
+		pixelsGroupedLabel.setText("Pixels Grouped: Auto");
+		c = setGridBagConstraints(c, 0, 5, 0, 10, 0, 0);
+		east.add(pixelsGroupedLabel, c);
+		c = setGridBagConstraints(c, 0, 6, 0, 0, 0, 0);
+		east.add(increasePixelsGrouped, c);
+		increasePixelsGrouped.addActionListener(this);
+		c = setGridBagConstraints(c, 1, 6, 0, 0, 0, 0);
+		east.add(decreasePixelsGrouped, c);
+		decreasePixelsGrouped.addActionListener(this);
+		c = setGridBagConstraints(c, 2, 6, 0, 0, 0, 0);
+		east.add(autoPixelsGrouped, c);
+		autoPixelsGrouped.addActionListener(this);
 		c = setGridBagConstraints(c, 0, 7, 0, 0, 0, 0.1);
-		east.add(stddevLabel, c);
+		east.add(pointsLabel, c);
 		c = setGridBagConstraints(c, 0, 8, 0, 0, 0, 0.1);
+		east.add(ratioLabel, c);
+		c = setGridBagConstraints(c, 0, 9, 0, 0, 0, 0.1);
+		east.add(stddevLabel, c);
+		c = setGridBagConstraints(c, 0, 10, 0, 0, 0, 0.1);
 		east.add(anglesLabel, c);
-		c = setGridBagConstraints(c, 0, 9, 0, 0, 0, 2);
+		c = setGridBagConstraints(c, 0, 11, 0, 0, 0, 2);
 		east.add(statusLabel, c);
 		c.gridwidth = 2;
 		c.fill = GridBagConstraints.HORIZONTAL;
-		c = setGridBagConstraints(c, 1, 10, 20, 0, 1, 0);
+		c = setGridBagConstraints(c, 1, 12, 20, 0, 1, 0);
 		east.add(generate, c);
 		generate.addActionListener(this);
 		
@@ -258,6 +276,26 @@ public class Main implements ActionListener {
 				sizeThreshold -= 50;
 				noiseSizeLabel.setText("Size Threshold: " + sizeThreshold);
 			}
+		}
+		//increase pixels grouped
+		else if(event.getSource().equals(increasePixelsGrouped)){
+			usePixelsGrouped = true;
+			pixelsGrouped += 5;
+			pixelsGroupedLabel.setText("Pixels Grouped: " + pixelsGrouped);
+		}
+		//decrease pixels grouped
+		else if(event.getSource().equals(decreasePixelsGrouped)){
+			usePixelsGrouped = true;
+			if(pixelsGrouped > 5){
+				pixelsGrouped -= 5;
+			}
+			pixelsGroupedLabel.setText("Pixels Grouped: " + pixelsGrouped);
+
+		}
+		//auto pixels grouped
+		else if(event.getSource().equals(autoPixelsGrouped)){
+			usePixelsGrouped = false;
+			pixelsGroupedLabel.setText("Pixels Grouped: Auto");
 		}
 		//select the raw image to be displayed
 		else if(event.getSource().equals(imgButton1)){
@@ -502,11 +540,18 @@ public class Main implements ActionListener {
 				for (int i = 0; i < tracedOutline.size(); i++) {
 					outlineTrace.setRGB(tracedOutline.get(i)[0], tracedOutline.get(i)[1], Color.GREEN.getRGB());
 				}
-				int pixelsGrouped = Math.max(10, Math.round(tracedOutline.size() / 30f));
+				int currentPixelsGrouped;
+				if(usePixelsGrouped){
+					currentPixelsGrouped = pixelsGrouped;
+				}
+				else{
+					currentPixelsGrouped = Math.max(10, Math.round(tracedOutline.size() / 30f));
+				}
+				
 				ArrayList<int[]> currentCorner = new ArrayList<int[]>();
 				boolean groupContainsVertex = false;
 				//wrap around starting pixels
-				for (int i = 0; i < pixelsGrouped * 2; i++) {
+				for (int i = 0; i < currentPixelsGrouped * 2; i++) {
 					if(nextPoint[0] == -1){
 						break;
 					}
@@ -515,16 +560,16 @@ public class Main implements ActionListener {
 
 				}
 				//for however many pixels grouped together, add all the different connecting directions to an arraylist
-				for (int i = pixelsGrouped; i < tracedOutline.size() - pixelsGrouped; i++) {
+				for (int i = currentPixelsGrouped; i < tracedOutline.size() - currentPixelsGrouped; i++) {
 					ArrayList<Integer> distinctDirections = new ArrayList<Integer>();
-					for (int j = i + 1; j < i + pixelsGrouped; j++) {
+					for (int j = i + 1; j < i + currentPixelsGrouped; j++) {
 						if(!distinctDirections.contains(tracedOutline.get(j)[2])){
 							distinctDirections.add(tracedOutline.get(j)[2]);
 						}
 					}
 					if(distinctDirections.size() > 2){
 						groupContainsVertex = true;
-						int[] currentPixel = {tracedOutline.get(i+(pixelsGrouped/2))[0], tracedOutline.get(i+(pixelsGrouped/2))[1]};
+						int[] currentPixel = {tracedOutline.get(i+(currentPixelsGrouped/2))[0], tracedOutline.get(i+(currentPixelsGrouped/2))[1]};
 						currentCorner.add(currentPixel);
 					}
 					else{
