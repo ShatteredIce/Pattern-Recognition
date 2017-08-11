@@ -14,10 +14,10 @@ public class Main {
 	
 
 	final int colorThreshold = 5;
-	final int neighborMinThreshold = 5; //five or less or stack overflow 
+	final int neighborMinThreshold = 10; //five or less or stack overflow 
 	final int neighborMaxThreshold = 25;
-	final int blockThresh = 22;
-	final int differentiator = 2;
+//	final int blockThresh = 22;
+//	final int differentiator = 2;
 	final int spaceAroundCrop = 25;
 	final int spArCr = spaceAroundCrop;
 	
@@ -28,9 +28,14 @@ public class Main {
 		String shapeName = "twoshapes";
 		String fileExtension = "bmp";
 		BufferedImage best = loadImage("./res/raw/" + shapeName + "." + fileExtension);
+		ArrayList<int[]> testAL = new ArrayList<>();
+		int[] testAr = {3,7};
+		testAL.add(testAr);
+		System.out.println(ALContainsArray(testAL, testAr));
 		ArrayList<BufferedImage> tests = cropToBlock(convertGrayscale(best));
 //		BufferedImage test = convertGrayscale(best);
 		int index = -1;
+		System.out.println("Number of shapes found: "+tests.size());
 		for(BufferedImage test : tests) {
 			index ++;
 			storeImage(highlightShape(findEdges(test),test), "./res/processed/" + shapeName +index+"_out.png");
@@ -42,33 +47,33 @@ public class Main {
 			
 			
 			//shape.setRGB(536, 33, (new Color(255,0,0)).getRGB());
-			for (int k = 0; k < slimeTrail.size(); k += 1){
-				shape.setRGB(slimeTrail.get(k).get(0), slimeTrail.get(k).get(1), (new Color(255,0,0)).getRGB());
-			}
-			for (int i = 0; i < mine.size(); i ++){
-				
-				//System.out.println("x is:" + mine.get(i).get(0) + ", y is: " + mine.get(i).get(1));
-				ArrayList temp = mine.get(i);
-				for (int j = -2; j < 2; j ++) {
-					for (int k = -2; k < 2; k ++) {
-						shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(0,255,0)).getRGB());
-						if (i == mine.size() -1){
-							//shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(255,255,255)).getRGB());
-						}
-					}
-				}
-				System.out.println("X:" + temp.get(0) + " Y: " + temp.get(1));
-			}
-			storeImage(shape, "./res/processed/" + shapeName + "_out.png");
-			ArrayList<ArrayList<ArrayList<Integer>>> myList = new ArrayList<ArrayList<ArrayList<Integer>>>();
-			myList.add(mine);
-			
-			Double[][] my = processShape(myList);
-			for (Double[] value: my){
-				for (Double actualValue : value){
-					System.out.println(actualValue);
-				}
-			}
+//			for (int k = 0; k < slimeTrail.size(); k += 1){
+//				shape.setRGB(slimeTrail.get(k).get(0), slimeTrail.get(k).get(1), (new Color(255,0,0)).getRGB());
+//			}
+//			for (int i = 0; i < mine.size(); i ++){
+//				
+//				//System.out.println("x is:" + mine.get(i).get(0) + ", y is: " + mine.get(i).get(1));
+//				ArrayList temp = mine.get(i);
+//				for (int j = -2; j < 2; j ++) {
+//					for (int k = -2; k < 2; k ++) {
+//						shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(0,255,0)).getRGB());
+//						if (i == mine.size() -1){
+//							//shape.setRGB((int)temp.get(0), (int)temp.get(1), (new Color(255,255,255)).getRGB());
+//						}
+//					}
+//				}
+//				System.out.println("X:" + temp.get(0) + " Y: " + temp.get(1));
+//			}
+//			storeImage(shape, "./res/processed/" + shapeName + "_out.png");
+//			ArrayList<ArrayList<ArrayList<Integer>>> myList = new ArrayList<ArrayList<ArrayList<Integer>>>();
+//			myList.add(mine);
+//			
+//			Double[][] my = processShape(myList);
+//			for (Double[] value: my){
+//				for (Double actualValue : value){
+//					System.out.println(actualValue);
+//				}
+//			}
 			
 		}
 		 
@@ -529,23 +534,22 @@ public class Main {
 		int wi = input.getWidth(), hi = input.getHeight();
 		ArrayList<BufferedImage> out = new ArrayList<BufferedImage>();
 		int[][] numSim = new int[input.getHeight()][input.getWidth()];
+		int[][] simArr = new int[wi][hi];
 		for(int x = 0; x < wi - 0; x ++ ) {
 			for(int y = 0; y < hi - 0; y ++) {
 				int numSimilar = 0;
 				int total = 0;
+				Color thisColor = new Color(input.getRGB(x, y));
 				for(int i = -2; i < 3; i ++) {
-					Color thisColor = new Color(input.getRGB(x, y));
 					//System.out.println("Checking x:"+(x+i));
 					for (int j = -2; j < 3; j ++) {
-						try {
+						if( (x + i < wi && y + j < hi) && (x + i>= 0 && y + j>= 0) ) {
 							//System.out.println("Checking y:"+(y+j));
 							Color thatColor = new Color(input.getRGB(x + i, y + j));
 							if(checkSimilarity(thisColor,thatColor)){
 								numSimilar ++;
 							}
 							total ++;
-						} catch(Exception e) {
-							
 						}
 					}
 				}
@@ -553,11 +557,12 @@ public class Main {
 					numSimilar = (int)(25*(((double)numSimilar)/total));
 				}
 				numSim[y][x] = 25 - numSimilar;
+				simArr[x][y] = neighborMinThreshold <= numSimilar && neighborMaxThreshold >= numSimilar ? 1 : 0;
 				//System.out.print(numSimilar+",");
 			}
 			//System.out.println("");
 		}
-		for(int[] o : numSim) {
+		for(int[] o : simArr) {
 			for(int x : o) {
 				System.out.print(x + " ");
 			}
@@ -567,9 +572,9 @@ public class Main {
 		ArrayList<Integer> miYArray = new ArrayList<>();
 		ArrayList<Integer> maXArray = new ArrayList<>();
 		ArrayList<Integer> maYArray = new ArrayList<>();
-		for(int i = 2; i < numSim.length-2; i ++) {
-			for(int j = 2; j < numSim[i].length-2; j ++) {
-				int current = numSim[i][j];
+		for(int i = 2; i < simArr.length-2; i ++) {
+			for(int j = 2; j < simArr[i].length-2; j ++) {
+				int current = simArr[i][j];
 				Boolean withinShape = false;
 				for(int k = 0; k < miXArray.size(); k ++) {
 					withinShape = (
@@ -586,11 +591,11 @@ public class Main {
 					 continue;
 				 }
 				//System.out.println("Current is "+current);
-				if(current < blockThresh - differentiator) {
+				if(current == 1) {
 					ArrayList<int[]> edges = new ArrayList<>();
 					Iteration = 0;
-					System.out.println("Testing "+i+","+j);
-					edges = tailCheck4(numSim,i,j,edges,wi,hi);
+					System.out.println("Testing "+i+","+j+", width and height are"+wi+" & "+hi);
+					edges = getEdgeArray_slower(i,j,simArr,wi,hi);
 					ArrayList<Integer> xs = new ArrayList<>();
 					ArrayList<Integer> ys = new ArrayList<>();
 					xs.add(i);
@@ -612,80 +617,206 @@ public class Main {
 						miYArray.add(minY);
 						int rectx = minX-spArCr >= 0 ? minX-spArCr : 0, 
 								recty = minY-spArCr >= 0 ? minY-spArCr : 0, 
-										rectX = (maxX-minX)+spArCr < numSim.length - 1? (maxX-minX)+spArCr : numSim.length - 1, 
-												rectY = (maxY-minY)+spArCr < numSim.length - 1? (maxY-minY)+spArCr : numSim.length - 1;
-						out.add(input.getSubimage(recty,rectx,rectY,rectX));
+										rectW = (maxX-minX)+spArCr < (wi - 1) - minX? (maxX-minX)+spArCr : (wi - 1) - minX, 
+												rectH = (maxY-minY)+spArCr < (hi - 1) - minY? (maxY-minY)+spArCr : (hi - 1) - minY;
+						out.add(input.getSubimage(rectx,recty,rectW,rectH));
 					}
 				}
 			}
 		}
 		return out;
 	}
-	private ArrayList<int[]> tailCheck4(int[][] SimilarityArray, int StartX, int StartY, ArrayList<int[]> edgeArray, int width, int height) {
-		int[] CurrentPoint = {StartX, StartY};
-		/*for(int[] o : testedArray) {
-			for(int i : o) {
-				System.out.print(i+" ");
-			}
-			System.out.println("has been tested");
-		}*/
-		
-		
-		Iteration ++;
-		System.out.println("Iteration "+Iteration);
-		System.out.println("Testing ("+StartX+","+StartY+")"+" which is: "+SimilarityArray[StartX][StartY]);
-		if(!ALContainsArray(testedArray,CurrentPoint)) {
-			testedArray.add(CurrentPoint);
-			try {
-				if(StartX + 1 < width && StartY < height && StartX + 1>= 0 && StartY >= 0) {
-					System.out.println("Trying ("+(StartX+1)+","+StartY+")"+" which is: "+SimilarityArray[StartX][StartY]);
-					if(SimilarityArray[StartX+1][StartY] > blockThresh) {
-						edgeArray = tailCheck4(SimilarityArray,StartX+1,StartY,edgeArray,width,height);
-					} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
-						edgeArray.add(CurrentPoint);
+//	private ArrayList<int[]> tailCheck4(int[][] SimilarityArray, int StartX, int StartY, ArrayList<int[]> edgeArray, int width, int height) {
+//		int[] CurrentPoint = {StartX, StartY};
+//		/*for(int[] o : testedArray) {
+//			for(int i : o) {
+//				System.out.print(i+" ");
+//			}
+//			System.out.println("has been tested");
+//		}*/
+//		
+//		
+//		Iteration ++;
+//		System.out.println("Iteration "+Iteration);
+//		System.out.println("Testing ("+StartX+","+StartY+")"+" which is: "+SimilarityArray[StartX][StartY]);
+//		if(!ALContainsArray(testedArray,CurrentPoint)) {
+//			testedArray.add(CurrentPoint);
+//			try {
+//				if(StartX + 1 < width && StartY < height && StartX + 1 >= 0 && StartY >= 0) {
+//					System.out.println("Trying ("+(StartX+1)+","+StartY+")"+" which is: "+SimilarityArray[StartX][StartY]);
+//					if(SimilarityArray[StartX+1][StartY] > blockThresh) {
+//						edgeArray = tailCheck4(SimilarityArray,StartX+1,StartY,edgeArray,width,height);
+//					} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
+//						edgeArray.add(CurrentPoint);
+//					}
+//				}
+//			}catch (ArrayIndexOutOfBoundsException e) {
+//				e.printStackTrace();
+//			}
+//			try {
+//				if(StartX< width && StartY + 1< height && StartX>= 0 && StartY + 1>= 0) {
+//					System.out.println("Trying ("+StartX+","+(StartY+1)+")"+" which is: "+SimilarityArray[StartX][StartY]);
+//					if(SimilarityArray[StartX][StartY+1] > blockThresh) {
+//						edgeArray = tailCheck4(SimilarityArray,StartX,StartY+1,edgeArray,width,height);
+//					} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
+//						edgeArray.add(CurrentPoint);
+//					}
+//				}
+//			}catch (ArrayIndexOutOfBoundsException e) {
+//				e.printStackTrace();
+//			}
+//			try {
+//				if(StartX - 1< width && StartY < height && StartX - 1>= 0 && StartY >= 0 && Iteration != 0) {
+//					System.out.println("Trying ("+(StartX-1)+","+StartY+")"+" which is: "+SimilarityArray[StartX][StartY]);
+//					if(SimilarityArray[StartX-1][StartY] > blockThresh) {
+//						edgeArray = tailCheck4(SimilarityArray,StartX-1,StartY,edgeArray,width,height);
+//					} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
+//						edgeArray.add(CurrentPoint);
+//					}
+//				}
+//			}catch (ArrayIndexOutOfBoundsException e) {
+//				e.printStackTrace();
+//			}
+//			try {
+//				if(StartX < width && StartY - 1 < height && StartX>= 0 && StartY - 1>= 0 && Iteration != 0) {
+//					System.out.println("Trying ("+StartX+","+(StartY-1)+")"+" which is: "+SimilarityArray[StartX][StartY]);
+//					if(SimilarityArray[StartX][StartY-1] > blockThresh) {
+//						edgeArray = tailCheck4(SimilarityArray,StartX,StartY-1,edgeArray,width,height);
+//					} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
+//						edgeArray.add(CurrentPoint);
+//					}
+//				}
+//			}catch (ArrayIndexOutOfBoundsException e) {
+//				e.printStackTrace();
+//			}
+//		}
+//		System.out.println("returning");
+//		return edgeArray;
+//	}
+	private ArrayList<int[]> getEdgeArrayFaster_BROKEN(int startX, int startY, int[][] similarityArray, int width, int height){
+		//implemented from https://en.wikipedia.org/wiki/Flood_fill#Alternative_implementations + some extra stuff
+		ArrayList<int[]> edgeArray = new ArrayList<>();
+		ArrayList<int[]> queue = new ArrayList<>();
+		int[] node = {startX, startY};
+		queue.add(node);
+		for (int i = 0; i < queue.size(); i ++) {
+//			System.out.println("I've tested:");
+//			
+//			for(int[] a : testedArray) {
+//				System.out.print("     ");
+//				for(int in : a) {
+//					System.out.print(in+" ");
+//				}
+//				System.out.println("");
+//			}
+			int[] current = queue.get(i);
+			if(!ALContainsArray(testedArray,current)) {
+				int curX = current[0], curY = current[1];
+				System.out.println("checking "+curX+"  "+curY);
+				int leftMost = curX, rightMost = curX;
+				while(leftMost > 0 && similarityArray[leftMost][curY] == 0) {
+					leftMost --;
+				}
+				while(rightMost + 1 < width && similarityArray[rightMost+1][curY] == 0) {
+					rightMost ++ ;
+					System.out.println("rightmost is "+rightMost);
+				}
+				for(int newX = leftMost; newX < rightMost; newX ++) {
+					int[] newNode = {newX, curY - 1};
+					if(curY-1 >= 0 && similarityArray[newX][curY-1] == 0) {
+						queue.add(newNode);
+					} else if (!ALContainsArray(edgeArray,newNode)) {
+						edgeArray.add(newNode);
+					}
+					newNode[1] = curY + 1;
+					if(curY+1 < height && similarityArray[newX][curY+1] == 0) {
+						queue.add(newNode);
+					} else if (!ALContainsArray(edgeArray,newNode)) {
+						edgeArray.add(newNode);
 					}
 				}
-			}catch (ArrayIndexOutOfBoundsException e) {
-				e.printStackTrace();
-			}
-			try {
-				if(StartX< width && StartY + 1< height && StartX>= 0 && StartY + 1>= 0) {
-					System.out.println("Trying ("+StartX+","+(StartY+1)+")"+" which is: "+SimilarityArray[StartX][StartY]);
-					if(SimilarityArray[StartX][StartY+1] > blockThresh) {
-						edgeArray = tailCheck4(SimilarityArray,StartX,StartY+1,edgeArray,width,height);
-					} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
-						edgeArray.add(CurrentPoint);
-					}
-				}
-			}catch (ArrayIndexOutOfBoundsException e) {
-				e.printStackTrace();
-			}
-			try {
-				if(StartX - 1< width && StartY < height && StartX - 1>= 0 && StartY >= 0 && Iteration != 0) {
-					System.out.println("Trying ("+(StartX-1)+","+StartY+")"+" which is: "+SimilarityArray[StartX][StartY]);
-					if(SimilarityArray[StartX-1][StartY] > blockThresh) {
-						edgeArray = tailCheck4(SimilarityArray,StartX-1,StartY,edgeArray,width,height);
-					} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
-						edgeArray.add(CurrentPoint);
-					}
-				}
-			}catch (ArrayIndexOutOfBoundsException e) {
-				e.printStackTrace();
-			}
-			try {
-				if(StartX < width && StartY - 1 < height && StartX>= 0 && StartY - 1>= 0 && Iteration != 0) {
-					System.out.println("Trying ("+StartX+","+(StartY-1)+")"+" which is: "+SimilarityArray[StartX][StartY]);
-					if(SimilarityArray[StartX][StartY-1] > blockThresh) {
-						edgeArray = tailCheck4(SimilarityArray,StartX,StartY-1,edgeArray,width,height);
-					} else if(!ALContainsArray(edgeArray,CurrentPoint)) {
-						edgeArray.add(CurrentPoint);
-					}
-				}
-			}catch (ArrayIndexOutOfBoundsException e) {
-				e.printStackTrace();
+				int[] leftPoint = {leftMost, curY}, rightPoint = {rightMost, curY};
+				edgeArray.add(leftPoint);
+				edgeArray.add(rightPoint);
+				testedArray.add(current);
 			}
 		}
-		System.out.println("returning");
+		
+		return edgeArray;
+		
+	}
+	private ArrayList<int[]> getEdgeArray_slower(int startX, int startY, int[][] similarityArray, int width, int height){
+		//implemented from https://en.wikipedia.org/wiki/Flood_fill#Alternative_implementations + some extra stuff
+		ArrayList<int[]> edgeArray = new ArrayList<>();
+		ArrayList<int[]> queue = new ArrayList<>();
+		int iter = 0;
+		int[][] SA = similarityArray;
+		int w = width, h = height, tX = 0, tY = 0;
+		int[] node = {startX, startY}, testing = {tX, tY};
+		queue.add(node);
+		while(queue.size() != 0) {
+//			System.out.println(iter ++);
+			iter ++;
+			int[] current = queue.get(0);
+			queue.remove(0);
+//			System.out.println(current[0] + " " + current[1]);
+			int[] cur = current.clone();
+			tX = cur[0]+1;
+			tY = cur[1];
+			testedArray.add(cur.clone());
+			testing[0] = tX;
+			testing[1] = tY;
+			if(tX < w  && !ALContainsArray(testedArray,testing)) {
+				testedArray.add(testing.clone());
+//				System.out.println("-0-");
+				if(SA[tX][tY]==0) {
+					queue.add(testing.clone());
+				} else if(!ALContainsArray(edgeArray,cur)) {
+					edgeArray.add(cur.clone());
+				}
+			}
+//			System.out.println("tested:");
+//			for(int[] a : testedArray) {
+//				System.out.print("("+a[0]+","+a[1]+") ");
+//			}
+//			System.out.println("");
+			tX = cur[0]-1;
+			testing[0] = tX;
+			if(tX >= 0  && !ALContainsArray(testedArray,testing) && iter > 2) {
+//				System.out.println("-1-");
+				if(SA[tX][tY]==0) {
+					queue.add(testing.clone());
+				} else if(!ALContainsArray(edgeArray,cur)) {
+					edgeArray.add(cur.clone());
+				}
+				testedArray.add(testing.clone());
+			}
+			tX = cur[0];
+			tY = cur[1] + 1;
+			testing[0] = tX;
+			testing[1] = tY;
+			if(tY < h  && !ALContainsArray(testedArray,testing)) {
+//				System.out.println("-2-");
+				if(SA[tX][tY]==0) {
+					queue.add(testing.clone());
+				} else if(!ALContainsArray(edgeArray,cur)) {
+					edgeArray.add(cur.clone());
+				}
+				testedArray.add(testing.clone());
+			}
+			tY = cur[1] - 1;
+			testing[0] = tX;
+			testing[1] = tY;
+			if(tY >= 0  && !ALContainsArray(testedArray,testing) && iter > 2) {
+//				System.out.println("-3-");
+				if(SA[tX][tY]==0) {
+					queue.add(testing.clone());
+				} else if(!ALContainsArray(edgeArray,cur)) {
+					edgeArray.add(cur.clone());
+				}
+				testedArray.add(testing.clone());
+			}
+		}
 		return edgeArray;
 	}
 	private Boolean ALContainsArray(ArrayList<int[]> AL, int[] intArray) {
